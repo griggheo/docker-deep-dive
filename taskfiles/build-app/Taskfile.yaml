@@ -1,0 +1,31 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ['.env', '.secrets', '../.env', '../.secrets']
+env:
+  SRC_DIR: sourcecode
+  ARTIFACT_DIR: artifacts
+  DOCKER_BUILD_IMAGE: ubuntu22.04:openjdk11
+
+tasks:
+  git-clone:
+    cmds:
+      - rm -rf $SRC_DIR; mkdir -p $SRC_DIR
+      - cd $SRC_DIR; git clone https://github.com/$GH_ORG/$GH_REPO.git
+
+  docker-login:
+    cmds:
+      - echo $GH_PAT | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
+
+
+        #  build-app:
+        #    deps: ['git-clone', 'docker-login']
+        #    cmds:
+        #      - docker run --rm -v `pwd`:/tmp/code $DOCKER_REGISTRY/$GH_ORG/$DOCKER_BUILD_IMAGE bash -c "cd /tmp/code/$SRC_DIR/$GH_REPO; bash $BUILD_SCRIPT"
+
+  publish-jar:
+    #deps: ['build-app']
+    cmds:
+      - rm -rf $ARTIFACT_DIR; mkdir -p $ARTIFACT_DIR
+      - find $SRC_DIR/ -regextype posix-basic -regex  ".*\/build\/libs\/$GH_REPO.*[0-9]\.[0-9]\.[0-9]\.jar" -exec cp {} $ARTIFACT_DIR \;
