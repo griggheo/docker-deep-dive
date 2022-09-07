@@ -2,16 +2,15 @@
 
 version: '3'
 
-dotenv: ['.env', '.secrets', '../.env', '../.secrets']
-env:
-  DOCKER_DIR: ubuntu22.04-openjdk11
-  DOCKER_IMAGE_NAME: ubuntu22.04
-  DOCKER_IMAGE_TAG: openjdk11
-
 tasks:
+  git-clone:
+    cmds:
+      - sudo rm -rf $SRC_DIR; mkdir -p $SRC_DIR
+      - cd $SRC_DIR; git clone https://github.com/$GH_ORG/$GH_REPO.git
+
   docker-build:
     cmds:
-      - cd $DOCKER_DIR; docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
+      - cd $DOCKER_DIR; docker buildx build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG . -f $DOCKERFILE_NAME
 
   docker-login:
     cmds:

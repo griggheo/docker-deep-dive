@@ -1,0 +1,19 @@
+# https://taskfile.dev
+
+version: '3'
+
+includes:
+  common: ../../common
+
+dotenv: ['.env', '.secrets', '../../.env', '../../.secrets']
+
+env:
+  DOCKER_DIR: .
+  DOCKERFILE_NAME: Dockerfile
+  DOCKER_IMAGE_NAME: ubuntu22.04
+  DOCKER_IMAGE_TAG: openjdk17
+
+tasks:
+  default:
+    cmds:
+      - task: common:docker-push
