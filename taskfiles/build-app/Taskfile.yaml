@@ -18,7 +18,6 @@ tasks:
     cmds:
       - echo $GH_PAT | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
 
-
   build-app:
     deps: ['git-clone', 'docker-login']
     cmds:
