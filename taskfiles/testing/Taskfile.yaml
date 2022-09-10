@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  greet:
+    vars:
+      RECIPIENT: '{{default "World" .RECIPIENT}}'
+    cmds:
+      - echo "Hello, {{.RECIPIENT}}!"
+
+  greet-pessimistically:
+    cmds:
+      - task: greet
+        vars: {RECIPIENT: "Cruel World"}

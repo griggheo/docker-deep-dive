@@ -12,20 +12,39 @@ env:
   SRC_DIR: sourcecode
   ARTIFACT_DIR: artifacts
   DOCKER_BUILD_IMAGE: ubuntu22.04:openjdk11
+  BUILD_DIR: build/libs
+  APP_VERSION: 2.0.0
 
 tasks:
-  prep:
+  build-app-gradle:
     cmds:
-      - task: common:git-clone
-      - task: common:docker-login
+      - task: common:build-app
 
-  build-app:
-    deps: ['prep']
-    cmds:
-      - docker run --rm -v `pwd`:/tmp/code $DOCKER_REGISTRY/$GH_ORG/$DOCKER_BUILD_IMAGE bash -c "cd /tmp/code/$SRC_DIR/$GH_REPO; bash $BUILD_SCRIPT"
-
-  publish-jar:
-    deps: ['build-app']
+  publish-jar-gradle:
+    deps: ['build-app-gradle']
     cmds:
       - mkdir -p $ARTIFACT_DIR
-      - find $SRC_DIR/ -regextype posix-basic -regex  ".*\/build\/libs\/$GH_REPO.*[0-9]\.[0-9]\.[0-9]\.jar" -exec cp {} $ARTIFACT_DIR \;
+      - find $SRC_DIR/ -regextype posix-basic -regex  ".*$BUILD_DIR\/${GH_REPO}-${APP_VERSION}\.jar" -exec cp {} $ARTIFACT_DIR \;
+      - sudo rm -rf $SRC_DIR
+    generates:
+      - $ARTIFACT_DIR/${GH_REPO}-${APP_VERSION}.jar
+
+  build-push-docker-image-amazoncorretto:
+    deps: ['publish-jar-gradle']
+    cmds:
+      - task: common:build-push-docker-image-java
+        vars:
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+          DOCKERFILE_NAME: "Dockerfile.amazoncorretto-17-alpine3-15"
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-amazoncorretto-17-alpine3-15"
+
+  build-push-docker-image-temurin:
+    deps: ['publish-jar-gradle']
+    cmds:
+      - task: common:build-push-docker-image-java
+        vars:
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+          DOCKERFILE_NAME: Dockerfile.eclipse-temurin-17-jre-jammy
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: ${APP_VERSION}-eclipse-temurin-17-jre-jammy

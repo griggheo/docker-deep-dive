@@ -7,13 +7,12 @@ includes:
 
 dotenv: ['.env', '.secrets', '../../.env', '../../.secrets']
 
-env:
-  DOCKER_DIR: .
-  DOCKERFILE_NAME: Dockerfile
-  DOCKER_IMAGE_NAME: ubuntu22.04
-  DOCKER_IMAGE_TAG: openjdk11
-
 tasks:
   default:
     cmds:
-      - task: common:docker-push
+      - task: common:build-push-docker-image
+        vars:
+          DOCKER_DIR: "."
+          DOCKERFILE_NAME: Dockerfile
+          DOCKER_IMAGE_NAME: ubuntu22.04
+          DOCKER_IMAGE_TAG: openjdk11
