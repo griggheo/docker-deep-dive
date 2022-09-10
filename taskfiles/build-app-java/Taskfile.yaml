@@ -1,0 +1,40 @@
+# https://taskfile.dev
+
+version: '3'
+
+includes:
+  common: ../common
+
+dotenv: ['.env', '.secrets', '../.env', '../.secrets']
+env:
+  APP_VERSION: 2.0.0
+  ARTIFACT_DIR: artifacts
+  BUILD_DIR: build/libs
+  BUILD_SCRIPT: .github/scripts/build-app.sh
+  DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+  GH_REPO: spring-music
+  SRC_DIR: sourcecode
+
+tasks:
+  build-push-docker-image-amazoncorretto:
+    cmds:
+      - task: common:build-push-docker-image-java
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk11"
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-amazoncorretto-17-alpine3-15"
+          DOCKERFILE_NAME: "Dockerfile.amazoncorretto-17-alpine3-15"
+      - defer:
+        task: common:cleanup-srcdir
+
+
+  build-push-docker-image-temurin:
+    cmds:
+      - task: common:build-push-docker-image-java
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk11"
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-eclipse-temurin-17-jre-jammy"
+          DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"
+      - defer:
+        task: common:cleanup-srcdir

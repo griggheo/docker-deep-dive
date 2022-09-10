@@ -5,14 +5,12 @@ version: '3'
 includes:
   common: ../../common
 
-dotenv: ['.env', '.secrets', '../../.env', '../../.secrets']
+dotenv: ['.env', '.secrets', '../.env', '../.secrets', '../../.env', '../../.secrets']
 
 tasks:
   default:
     cmds:
       - task: common:build-push-docker-image
         vars:
-          DOCKER_DIR: "."
-          DOCKERFILE_NAME: Dockerfile
           DOCKER_IMAGE_NAME: ubuntu22.04
           DOCKER_IMAGE_TAG: openjdk17

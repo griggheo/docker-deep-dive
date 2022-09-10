@@ -3,14 +3,18 @@
 version: '3'
 
 tasks:
+  cleanup-srcdir:
+    cmds:
+      - sudo rm -rf {{.SRC_DIR}}
+
   git-clone:
     cmds:
-      - sudo rm -rf $SRC_DIR; mkdir -p $SRC_DIR
-      - cd $SRC_DIR; git clone https://github.com/$GH_ORG/$GH_REPO.git
+      - rm -rf {{.SRC_DIR}}; mkdir -p {{.SRC_DIR}}
+      - cd {{.SRC_DIR}}; git clone https://github.com/{{.GH_ORG}}/{{.GH_REPO}}.git
 
   docker-login:
     cmds:
-      - echo $GH_PAT | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
+      - echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
 
   docker-build:
     cmds:
@@ -18,17 +22,40 @@ tasks:
 
   docker-push:
     cmds:
-      - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} $DOCKER_REGISTRY/$GH_ORG/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
-      - docker push $DOCKER_REGISTRY/$GH_ORG/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+      - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+      - docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
 
   build-app:
-    deps: ['git-clone', 'docker-login']
     cmds:
-      - docker run --rm -v `pwd`:/tmp/code $DOCKER_REGISTRY/$GH_ORG/$DOCKER_BUILD_IMAGE bash -c "cd /tmp/code/$SRC_DIR/$GH_REPO; bash $BUILD_SCRIPT"
+      - task: git-clone
+        vars:
+          SRC_DIR: "{{.SRC_DIR}}"
+      - task: docker-login
+        vars:
+          DOCKER_REGISTRY: "{{.DOCKER_REGISTRY}}"
+          DOCKER_USERNAME: "{{.DOCKER_USERNAME}}"
+      - docker run --rm -v `pwd`:/tmp/code {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/code/{{.SRC_DIR}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+      - sudo chown -R ubuntu:ubuntu {{.SRC_DIR}}/{{.GH_REPO}}
+
+  publish-jar:
+    cmds:
+      - mkdir -p {{.ARTIFACT_DIR}}
+        #- find {{.SRC_DIR}}/ -regextype posix-basic -regex  ".*{{.BUILD_DIR}}\/{{.GH_REPO}}-{{.APP_VERSION}}\.jar" -exec cp {} {{.ARTIFACT_DIR}} \;
+      - mv {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}\.jar {{.ARTIFACT_DIR}}
+        #    generates:
+        #      - {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar
+
+  retrieve-jar:
+    cmds:
+      - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
+      - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
 
   build-push-docker-image:
     cmds:
       - task: docker-login
+        vars:
+          DOCKER_REGISTRY: "{{.DOCKER_REGISTRY}}"
+          DOCKER_USERNAME: "{{.DOCKER_USERNAME}}"
       - task: docker-build
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
@@ -42,17 +69,47 @@ tasks:
 
   build-push-docker-image-java:
     cmds:
-      - task: git-clone
-      - mkdir -p $SRC_DIR/$GH_REPO/$BUILD_DIR
-      - cp $ARTIFACT_DIR/${GH_REPO}-${APP_VERSION}.jar $SRC_DIR/$GH_REPO/$BUILD_DIR
-      - task: docker-login
+      - task: build-app
+        vars:
+          APP_VERSION: "{{.APP_VERSION}}"
+          ARTIFACT_DIR: "{{.ARTIFACT_DIR}}"
+          BUILD_DIR: "{{.BUILD_DIR}}"
+          BUILD_SCRIPT: "{{.BUILD_SCRIPT}}"
+          DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-amazoncorretto-17-alpine3-15"
+          DOCKER_REGISTRY: "{{.DOCKER_REGISTRY}}"
+          DOCKER_USERNAME: "{{.DOCKER_USERNAME}}"
+          GH_ORG: "{{.GH_ORG}}"
+          GH_REPO: "{{.GH_REPO}}"
+          SRC_DIR: "{{.SRC_DIR}}"
+      - task: publish-jar
+        vars:
+          APP_VERSION: "{{.APP_VERSION}}"
+          ARTIFACT_DIR: "{{.ARTIFACT_DIR}}"
+          BUILD_DIR: "{{.BUILD_DIR}}"
+          GH_REPO: "{{.GH_REPO}}"
+          SRC_DIR: "{{.SRC_DIR}}"
+      # TODO
+      # task: sign-jar
+      - task: retrieve-jar
+        vars:
+          APP_VERSION: "{{.APP_VERSION}}"
+          ARTIFACT_DIR: "{{.ARTIFACT_DIR}}"
+          BUILD_DIR: "{{.BUILD_DIR}}"
+          GH_REPO: "{{.GH_REPO}}"
+          SRC_DIR: "{{.SRC_DIR}}"
       - task: docker-build
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
-          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+      # TODO
+      # task: docker-scan
       - task: docker-push
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      # TODO
+      # task: sign-docker-image
