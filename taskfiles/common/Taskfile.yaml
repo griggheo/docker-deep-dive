@@ -3,12 +3,13 @@
 version: '3'
 
 tasks:
-  cleanup-srcdir:
+  cleanup-workdir:
     cmds:
-      - sudo rm -rf {{.SRC_DIR}}
+      - sudo rm -rf {{.WORKDIR}}
 
   git-clone:
     cmds:
+      - chmod 755 {{.WORKDIR}}
       - rm -rf {{.SRC_DIR}}; mkdir -p {{.SRC_DIR}}
       - cd {{.SRC_DIR}}; git clone https://github.com/{{.GH_ORG}}/{{.GH_REPO}}.git
 
@@ -18,12 +19,21 @@ tasks:
 
   docker-build:
     cmds:
-      - cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
+      - |
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+         cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --no-push
+        fi
 
   docker-push:
     cmds:
       - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
       - docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+
+  kaniko-build:
+    cmds:
 
   build-app:
     cmds:
@@ -34,21 +44,20 @@ tasks:
         vars:
           DOCKER_REGISTRY: "{{.DOCKER_REGISTRY}}"
           DOCKER_USERNAME: "{{.DOCKER_USERNAME}}"
-      - docker run --rm -v `pwd`:/tmp/code {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/code/{{.SRC_DIR}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
-      - sudo chown -R ubuntu:ubuntu {{.SRC_DIR}}/{{.GH_REPO}}
+      - docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        #    generates:
+        #      - {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar
 
   publish-jar:
     cmds:
       - mkdir -p {{.ARTIFACT_DIR}}
         #- find {{.SRC_DIR}}/ -regextype posix-basic -regex  ".*{{.BUILD_DIR}}\/{{.GH_REPO}}-{{.APP_VERSION}}\.jar" -exec cp {} {{.ARTIFACT_DIR}} \;
       - mv {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}\.jar {{.ARTIFACT_DIR}}
-        #    generates:
-        #      - {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar
 
   retrieve-jar:
     cmds:
       - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
-      - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
+      - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
 
   build-push-docker-image:
     cmds:
@@ -113,3 +122,5 @@ tasks:
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       # TODO
       # task: sign-docker-image
+      #
+

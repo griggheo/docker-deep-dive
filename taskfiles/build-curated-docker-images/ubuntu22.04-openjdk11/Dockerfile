@@ -1,6 +1,8 @@
-FROM ubuntu:22.04
+FROM ghcr.io/codepraxis-io/ubuntu22.04:base
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+USER root
 
 # Install default-jdk
 RUN apt update -y \
@@ -9,3 +11,6 @@ RUN apt update -y \
 
 # Cleanup
 RUN rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# Switch to non-root user
+USER devsecops
