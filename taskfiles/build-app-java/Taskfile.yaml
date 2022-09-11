@@ -55,3 +55,14 @@ tasks:
           DOCKERFILE_NAME: "Dockerfile.distroless-java17-debian11"
       - defer:
         task: common:cleanup-workdir
+
+  build-push-docker-image-distroless-multistage:
+    cmds:
+      - task: common:git-clone
+      - task: common:build-push-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java11-debian11-multistage"
+          DOCKERFILE_NAME: "Dockerfile.distroless-java11-debian11-multistage"
+      - defer:
+        task: common:cleanup-workdir
