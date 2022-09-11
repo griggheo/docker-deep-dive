@@ -26,6 +26,13 @@ tasks:
           cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
         fi
 
+  docker-image-scan:
+    cmds:
+      - |
+        if [ "{{.DOCKER_IMAGE_SCANNER}}" == "trivy" ]; then
+          trivy i {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
+
   docker-push:
     cmds:
       - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
@@ -57,6 +64,10 @@ tasks:
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: docker-image-scan
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: docker-push
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
@@ -82,8 +93,10 @@ tasks:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
-      # TODO
-      # task: docker-scan
+      - task: docker-image-scan
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: docker-push
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'

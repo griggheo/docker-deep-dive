@@ -19,6 +19,7 @@ env:
   ARTIFACT_DIR: "{{.WORKDIR}}/{{.ARTIFACT_DIR_NAME}}"
   DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
   DOCKER_BUILD_TYPE: "buildx"
+  DOCKER_IMAGE_SCANNER: "trivy"
 
 tasks:
   build-push-docker-image-amazoncorretto:
