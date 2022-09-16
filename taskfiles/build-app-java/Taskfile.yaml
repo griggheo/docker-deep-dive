@@ -13,10 +13,12 @@ env:
   GH_REPO: spring-music
   WORKDIR:
     sh: mktemp -d -p . -t workspace-XXXXXXXXXX
-  SRC_DIR_NAME: "sourcecode"
-  SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
   ARTIFACT_DIR_NAME: "artifacts"
+  SCAN_RESULT_DIR_NAME: "scan_results"
+  SRC_DIR_NAME: "sourcecode"
   ARTIFACT_DIR: "{{.WORKDIR}}/{{.ARTIFACT_DIR_NAME}}"
+  SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
+  SCAN_RESULT_DIR: "{{.WORKDIR}}/{{.SCAN_RESULT_DIR_NAME}}"
   DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
   DOCKER_BUILD_TYPE: "buildx"
   DOCKER_IMAGE_SCANNER: "trivy"

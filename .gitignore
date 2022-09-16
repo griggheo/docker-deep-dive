@@ -2,3 +2,4 @@ sourcecode
 artifacts
 .secrets
 workspace*
+tmp
