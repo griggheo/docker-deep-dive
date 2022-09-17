@@ -70,6 +70,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java17-debian11"
           DOCKERFILE_NAME: "Dockerfile.distroless-java17-debian11"
+          DOCKERFILE_SCANNER: "semgrep"
       - defer:
         task: common:cleanup-workdir
 

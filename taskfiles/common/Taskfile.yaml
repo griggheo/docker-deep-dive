@@ -42,8 +42,11 @@ tasks:
     cmds:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
-        if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-config-{{.DOCKERFILE_NAME}}.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+        if [ "{{.DOCKERFILE_SCANNER}}" == "semgrep" ]; then
+          semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | tee -a {{.SCAN_RESULT_DIR}}/semgrep-dockerfile-{{.DOCKERFILE_NAME}}.txt
+        else
+        #if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
+          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-dockerfile-{{.DOCKERFILE_NAME}}.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
           trivy config $ARGS
         fi
 
@@ -72,6 +75,12 @@ tasks:
   build-push-docker-image:
     cmds:
       - task: docker-login
+      - task: dockerfile-scan
+        vars:
+          DOCKER_DIR: "{{.DOCKER_DIR}}"
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: docker-build
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
@@ -109,6 +118,7 @@ tasks:
           DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: docker-build
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
@@ -120,6 +130,7 @@ tasks:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: docker-push
         vars:
