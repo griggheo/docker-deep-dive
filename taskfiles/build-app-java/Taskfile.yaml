@@ -18,10 +18,12 @@ env:
   SRC_DIR_NAME: "sourcecode"
   ARTIFACT_DIR: "{{.WORKDIR}}/{{.ARTIFACT_DIR_NAME}}"
   SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
-  SCAN_RESULT_DIR: "{{.WORKDIR}}/{{.SCAN_RESULT_DIR_NAME}}"
+  SCAN_RESULT_DIR: "./{{.SCAN_RESULT_DIR_NAME}}"
   DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
   DOCKER_BUILD_TYPE: "buildx"
   DOCKER_IMAGE_SCANNER: "trivy"
+  DOCKERFILE_SCANNER: "trivy"
+  STOP_ON_CRITICAL_VULNS: "false"
 
 tasks:
   build-push-docker-image-amazoncorretto:
@@ -36,6 +38,17 @@ tasks:
       - defer:
         task: common:cleanup-workdir
 
+  build-push-docker-image-curated-alpine3-16-openjdk17:
+    cmds:
+      - task: common:build-push-docker-image-java
+        vars:
+          DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
+          DOCKER_BUILD_TYPE: "kaniko"
+          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-curated-alpine3.16-openjdk17"
+          DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjdk17"
+      - defer:
+        task: common:cleanup-workdir
 
   build-push-docker-image-temurin:
     cmds:
@@ -45,6 +58,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-eclipse-temurin-17-jre-jammy"
           DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"
+          STOP_ON_CRITICAL_VULNS: "true"
       - defer:
         task: common:cleanup-workdir
 

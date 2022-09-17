@@ -31,7 +31,20 @@ tasks:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "trivy" ]; then
-          trivy image -f json -o {{.SCAN_RESULT_DIR}}/trivy_scan_results.json {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="--exit-code 1 --severity CRITICAL $ARGS"
+          fi
+          trivy image $ARGS
+        fi
+
+  dockerfile-scan:
+    cmds:
+      - |
+        mkdir -p {{.SCAN_RESULT_DIR}}
+        if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
+          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-config-{{.DOCKERFILE_NAME}}.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+          trivy config $ARGS
         fi
 
   docker-push:
@@ -83,11 +96,19 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.DOCKER_IMAGE_TAG}}"
           DOCKERFILE_NAME: "{{.DOCKERFILE_NAME}}"
+          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: publish-jar
       # TODO
       # task: sign-jar
       - task: retrieve-jar
         vars:
+      - task: dockerfile-scan
+        vars:
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
       - task: docker-build
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
@@ -98,6 +119,8 @@ tasks:
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: docker-push
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
