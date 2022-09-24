@@ -35,6 +35,7 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
+          echo Running: trivy image $ARGS
           trivy image $ARGS
         fi
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
@@ -42,6 +43,7 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
+          echo Running: grype $ARGS
           grype $ARGS
         fi
 
@@ -51,6 +53,7 @@ tasks:
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
           ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          echo Running: syft $ARGS
           syft $ARGS
         fi
 
@@ -70,6 +73,14 @@ tasks:
     cmds:
       - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
       - docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+
+  sign-docker-image:
+    cmds:
+      - echo -n {{.COSIGN_KEY_PASSWORD}} | cosign sign --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+
+  verify-signature-docker-image:
+    cmds:
+      - cosign verify --key {{.COSIGN_PUBLIC_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
 
   build-app:
     cmds:
@@ -162,7 +173,11 @@ tasks:
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-      # TODO
-      # task: sign-docker-image
-      #
-
+      - task: sign-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: verify-signature-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
