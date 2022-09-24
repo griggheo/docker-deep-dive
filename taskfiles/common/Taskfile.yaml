@@ -122,7 +122,21 @@ tasks:
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+      - task: generate-sbom-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
+          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
       - task: push-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: sign-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: verify-signature-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
