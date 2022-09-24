@@ -13,11 +13,11 @@ tasks:
       - rm -rf {{.SRC_DIR}}; mkdir -p {{.SRC_DIR}}
       - cd {{.SRC_DIR}}; git clone https://github.com/{{.GH_ORG}}/{{.GH_REPO}}.git
 
-  docker-login:
+  login-docker-registry:
     cmds:
       - echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
 
-  docker-build:
+  build-docker-image:
     cmds:
       - |
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -26,7 +26,7 @@ tasks:
           cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
         fi
 
-  docker-image-scan:
+  scan-docker-image:
     cmds:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
@@ -37,8 +37,24 @@ tasks:
           fi
           trivy image $ARGS
         fi
+        if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
+          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/grype-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="-f Critical $ARGS"
+          fi
+          grype $ARGS
+        fi
 
-  dockerfile-scan:
+  generate-sbom-docker-image:
+    cmds:
+      - |
+        mkdir -p {{.SCAN_RESULT_DIR}}
+        if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
+          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          syft $ARGS
+        fi
+
+  scan-dockerfile:
     cmds:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
@@ -50,7 +66,7 @@ tasks:
           trivy config $ARGS
         fi
 
-  docker-push:
+  push-docker-image:
     cmds:
       - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
       - docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
@@ -58,7 +74,7 @@ tasks:
   build-app:
     cmds:
       - task: git-clone
-      - task: docker-login
+      - task: login-docker-registry
       - docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
 
   publish-jar:
@@ -74,24 +90,28 @@ tasks:
 
   build-push-docker-image:
     cmds:
-      - task: docker-login
-      - task: dockerfile-scan
+      - task: login-docker-registry
+      - task: scan-dockerfile
         vars:
           DOCKER_DIR: "{{.DOCKER_DIR}}"
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-      - task: docker-build
+      - task: build-docker-image
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-      - task: docker-image-scan
+      - task: scan-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-      - task: docker-push
+          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
+          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+      - task: push-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
@@ -112,27 +132,33 @@ tasks:
       # TODO
       # task: sign-jar
       - task: retrieve-jar
-        vars:
-      - task: dockerfile-scan
+      - task: scan-dockerfile
         vars:
           DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-      - task: docker-build
+      - task: build-docker-image
         vars:
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
-      - task: docker-image-scan
+      - task: scan-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
-      - task: docker-push
+      - task: generate-sbom-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
+          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
+      - task: push-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
