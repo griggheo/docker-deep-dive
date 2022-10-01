@@ -20,10 +20,14 @@ tasks:
   build-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
-          docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --no-push
-        else
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
           cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with kaniko
+          #docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ 
+          docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --tarPath /workspace/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar --no-push
         fi
 
   scan-docker-image:
@@ -31,17 +35,29 @@ tasks:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+            ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: trivy image $ARGS
           trivy image $ARGS
         fi
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/grype-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/grype-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+            ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: grype $ARGS
           grype $ARGS
@@ -52,7 +68,13 @@ tasks:
       - |
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+            ARGS="$ARGS file:{{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
+          fi
           echo Running: syft $ARGS
           syft $ARGS
         fi
@@ -71,8 +93,15 @@ tasks:
 
   push-docker-image:
     cmds:
-      - docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
-      - docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+      - |
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+          docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          echo Running: crane push {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          crane push {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
 
   sign-docker-image:
     cmds:
@@ -110,12 +139,14 @@ tasks:
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: build-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: scan-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
@@ -124,12 +155,14 @@ tasks:
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: generate-sbom-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
       - task: push-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: sign-docker-image
@@ -146,13 +179,6 @@ tasks:
       - task: build-app
         vars:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
-          DOCKER_BUILD_TYPE: "{{.DOCKER_BUILD_TYPE}}"
-          DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
-          DOCKER_IMAGE_TAG: "{{.DOCKER_IMAGE_TAG}}"
-          DOCKERFILE_NAME: "{{.DOCKERFILE_NAME}}"
-          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
-          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
-          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: publish-jar
       # TODO
       # task: sign-jar
@@ -165,12 +191,14 @@ tasks:
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: build-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
       - task: scan-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
@@ -179,12 +207,14 @@ tasks:
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
       - task: generate-sbom-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
       - task: push-docker-image
         vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: sign-docker-image

@@ -3,3 +3,4 @@ artifacts
 .secrets
 workspace*
 tmp
+scan_results
