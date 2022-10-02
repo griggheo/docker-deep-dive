@@ -20,6 +20,8 @@ tasks:
   build-docker-image:
     cmds:
       - |
+        FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
+        cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
         if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
           cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
@@ -105,7 +107,7 @@ tasks:
 
   sign-docker-image:
     cmds:
-      - echo -n {{.COSIGN_KEY_PASSWORD}} | cosign sign --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+      - COSIGN_PASSWORD=$(cat {{.HOME}}/.k) cosign sign --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
 
   verify-signature-docker-image:
     cmds:
