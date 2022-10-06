@@ -20,11 +20,23 @@ tasks:
   build-docker-image:
     cmds:
       - |
-        FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
-        cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
+        if [ "{{.VERIFY_BASE_IMAGE}}" == "true" ]; then
+          FROM_IMAGE="{{.DOCKER_RUN_IMAGE}}"
+          if [ "$FROM_IMAGE" == "" ]; then
+           FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
+         fi
+          cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
+        fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
-          cd {{.DOCKER_DIR}}; docker buildx build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}
+          pushd {{.DOCKER_DIR}}
+          ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
+          if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
+            ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
+          fi
+          echo Running: docker buildx build $ARGS
+          docker buildx build $ARGS
+          popd
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with kaniko
@@ -141,7 +153,10 @@ tasks:
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: build-docker-image
         vars:
+          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
@@ -193,7 +208,10 @@ tasks:
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: build-docker-image
         vars:
+          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
           DOCKER_DIR: '{{.DOCKER_DIR}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'

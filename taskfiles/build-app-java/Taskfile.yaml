@@ -32,6 +32,7 @@ tasks:
       - task: common:build-push-docker-image-java
         vars:
           DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/amazoncorretto:17.0.4-alpine3.15"
           DOCKER_BUILD_TYPE: "kaniko"
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-amazoncorretto-17-alpine3-15"
@@ -57,6 +58,7 @@ tasks:
       - task: common:build-push-docker-image-java
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-eclipse-temurin-17-jre-jammy"
           DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"
@@ -70,6 +72,7 @@ tasks:
       - task: common:build-push-docker-image-java
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/distroless/java17-debian11"
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java17-debian11"
           DOCKERFILE_NAME: "Dockerfile.distroless-java17-debian11"
@@ -85,5 +88,6 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java11-debian11-multistage"
           DOCKERFILE_NAME: "Dockerfile.distroless-java11-debian11-multistage"
+          VERIFY_BASE_IMAGE: "false"
       - defer:
         task: common:cleanup-workdir
