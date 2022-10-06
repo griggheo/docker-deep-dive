@@ -5,7 +5,7 @@ version: '3'
 tasks:
   cleanup-workdir:
     cmds:
-      - sudo rm -rf {{.WORKDIR}}
+      - echo sudo rm -rf {{.WORKDIR}}
 
   git-clone:
     cmds:
@@ -153,20 +153,20 @@ tasks:
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: build-docker-image
         vars:
-          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
-          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
           DOCKER_DIR: '{{.DOCKER_DIR}}'
-          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
       - task: scan-docker-image
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
@@ -175,8 +175,8 @@ tasks:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: push-docker-image
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
@@ -200,48 +200,18 @@ tasks:
       # TODO
       # task: sign-jar
       - task: retrieve-jar
-      - task: scan-dockerfile
-        vars:
-          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
-          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
-          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
-          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-      - task: build-docker-image
+      - task: build-push-docker-image
         vars:
           DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
-          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
-          DOCKER_DIR: '{{.DOCKER_DIR}}'
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
-      - task: scan-docker-image
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
+          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
-      - task: generate-sbom-docker-image
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
-      - task: push-docker-image
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-      - task: sign-docker-image
-        vars:
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
-      - task: verify-signature-docker-image
-        vars:
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
