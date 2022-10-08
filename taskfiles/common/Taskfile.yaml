@@ -30,12 +30,12 @@ tasks:
         if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
           pushd {{.DOCKER_DIR}}
-          ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
-          if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
-            ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
-          fi
-          echo Running: docker buildx build $ARGS
-          docker buildx build $ARGS
+            ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
+            if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
+              ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
+            fi
+            echo Running: docker buildx build $ARGS
+            docker buildx build $ARGS
           popd
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -47,8 +47,24 @@ tasks:
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with Cloud Native Buildpacks
           pack config default-builder paketobuildpacks/builder:base
           pushd {{.DOCKER_DIR}}
-          echo Running: pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
-          pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+            echo Running: pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+            pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          popd
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          echo Stopping docker service
+          sudo systemctl stop docker
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with podman
+          pushd {{.DOCKER_DIR}}
+            ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
+            if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
+              ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
+            fi
+            echo Running: podman build $ARGS
+            podman build $ARGS
+            echo Saving podman image as tar file for scanning and SBOM
+            echo Running: podman save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+            podman save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           popd
         fi
 
@@ -61,10 +77,10 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
             ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: trivy image $ARGS
@@ -75,10 +91,10 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi 
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
             ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: grype $ARGS
@@ -91,10 +107,10 @@ tasks:
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
           ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
             ARGS="$ARGS file:{{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: syft $ARGS
@@ -116,13 +132,17 @@ tasks:
   push-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
           docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
           echo Running: crane push {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           crane push {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          podman tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          podman push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
 
   sign-docker-image:
