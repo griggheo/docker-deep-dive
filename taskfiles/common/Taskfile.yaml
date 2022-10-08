@@ -5,7 +5,7 @@ version: '3'
 tasks:
   cleanup-workdir:
     cmds:
-      - echo sudo rm -rf {{.WORKDIR}}
+      - sudo rm -rf {{.WORKDIR}}
 
   git-clone:
     cmds:
@@ -43,6 +43,14 @@ tasks:
           #docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ 
           docker run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v {{.HOME}}/.docker/config.json:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --tarPath /workspace/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar --no-push
         fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with Cloud Native Buildpacks
+          pack config default-builder paketobuildpacks/builder:base
+          pushd {{.DOCKER_DIR}}
+          echo Running: pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          popd
+        fi
 
   scan-docker-image:
     cmds:
@@ -53,7 +61,7 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -67,9 +75,9 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
-          fi
+          fi 
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
             ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
@@ -83,7 +91,7 @@ tasks:
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
           ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -108,7 +116,7 @@ tasks:
   push-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" != "kaniko" ]; then
           docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
@@ -142,7 +150,7 @@ tasks:
       - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
       - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
 
-  build-push-docker-image:
+  docker-pipeline:
     cmds:
       - task: login-docker-registry
       - task: scan-dockerfile
@@ -191,7 +199,7 @@ tasks:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
 
-  build-push-docker-image-java:
+  java-pipeline:
     cmds:
       - task: build-app
         vars:
@@ -200,7 +208,7 @@ tasks:
       # TODO
       # task: sign-jar
       - task: retrieve-jar
-      - task: build-push-docker-image
+      - task: docker-pipeline
         vars:
           DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
