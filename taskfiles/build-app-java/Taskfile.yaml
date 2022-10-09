@@ -99,3 +99,14 @@ tasks:
           VERIFY_BASE_IMAGE: "false"
       - defer:
         task: common:cleanup-workdir
+
+  jib:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_BUILD_TYPE: "jib"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-jib-eclipse-temurin-17-jre-jammy"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
+      - defer:
+        task: common:cleanup-workdir

@@ -20,8 +20,8 @@ tasks:
   build-docker-image:
     cmds:
       - |
+        FROM_IMAGE="{{.DOCKER_RUN_IMAGE}}"
         if [ "{{.VERIFY_BASE_IMAGE}}" == "true" ]; then
-          FROM_IMAGE="{{.DOCKER_RUN_IMAGE}}"
           if [ "$FROM_IMAGE" == "" ]; then
            FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
          fi
@@ -51,6 +51,13 @@ tasks:
             pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           popd
         fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with jib
+          pushd {{.DOCKER_DIR}}
+            echo Running: jib jar --from {{.DOCKER_RUN_IMAGE}} --target docker://{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.BUILD_DIR}}/app.jar
+            jib jar --from {{.DOCKER_RUN_IMAGE}} --target docker://{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.BUILD_DIR}}/app.jar
+          popd
+        fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
           echo Stopping docker service
           sudo systemctl stop docker
@@ -77,7 +84,7 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
@@ -91,7 +98,7 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi 
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
@@ -107,7 +114,7 @@ tasks:
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
           ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
           if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
@@ -132,7 +139,7 @@ tasks:
   push-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
           docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
