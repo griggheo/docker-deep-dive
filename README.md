@@ -43,6 +43,7 @@ Docker image build mechanisms:
 * Podman https://github.com/containers/podman
   * Buildah: https://github.com/containers/buildah
   * https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics
+  * https://podman.io/blogs/2018/10/31/podman-buildah-relationship.html
 * Jib: https://github.com/GoogleContainerTools/jib
   * https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md
 
