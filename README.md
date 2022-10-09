@@ -135,7 +135,7 @@ Other resources:
 ## Extra material
 
 * Running Dependency Track for inspecting SBOMs: https://dependencytrack.org/
-  * https://medium.com/geekculture/
+  * https://medium.com/geekculture/oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Running local Kubernetes clusters with kind: https://kind.sigs.k8s.io/
 * Running a local Docker registry in kind: https://kind.sigs.k8s.io/docs/user/private-registries/
 oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
