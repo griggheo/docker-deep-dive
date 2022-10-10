@@ -122,6 +122,8 @@ Other resources:
 
 ### GitHub Actions Reusable Workflows
 
+* Reusable workflows and reusable actions
+* Types of triggers (branch, tag, release)
 * https://docs.github.com/en/actions/using-workflows/reusing-workflows
 * https://betterprogramming.pub/how-to-use-github-actions-reusable-workflow-8604e8cbf258
 
