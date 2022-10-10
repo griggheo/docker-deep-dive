@@ -1,0 +1,112 @@
+# https://taskfile.dev
+
+version: '3'
+
+includes:
+  common: ../common
+
+dotenv: ['.env', '.secrets', '../.env', '../.secrets']
+env:
+  APP_VERSION: 0.0.1
+  BUILD_DIR: target
+  BUILD_SCRIPT: .github/scripts/build-app.sh
+  GH_REPO: dddive-springboot
+  WORKDIR:
+    sh: mktemp -d -p . -t workspace-XXXXXXXXXX
+  ARTIFACT_DIR_NAME: "artifacts"
+  SCAN_RESULT_DIR_NAME: "scan_results"
+  SRC_DIR_NAME: "sourcecode"
+  ARTIFACT_DIR: "{{.WORKDIR}}/{{.ARTIFACT_DIR_NAME}}"
+  SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
+  SCAN_RESULT_DIR: "./{{.SCAN_RESULT_DIR_NAME}}"
+  DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+  DOCKER_BUILD_TYPE: "buildx"
+  DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
+  DOCKER_IMAGE_SCANNER: "trivy"
+  DOCKERFILE_SCANNER: "trivy"
+  DOCKER_SBOM_GENERATOR: "syft"
+  STOP_ON_CRITICAL_VULNS: "false"
+
+tasks:
+  amazoncorretto:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_TYPE: "kaniko"
+          DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-kaniko-amazoncorretto-17-alpine3-15"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/amazoncorretto:17.0.4-alpine3.15"
+          DOCKERFILE_NAME: "Dockerfile.amazoncorretto-17-alpine3-15"
+      - defer:
+        task: common:cleanup-workdir
+
+  curated-alpine:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
+          DOCKER_BUILD_TYPE: "kaniko"
+          DOCKER_IMAGE_SCANNER: "grype"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-kaniko-curated-alpine3.16-openjdk17"
+          DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjdk17"
+      - defer:
+        task: common:cleanup-workdir
+
+  temurin:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_BUILD_TYPE: "podman"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-podman-eclipse-temurin-17-jre-jammy"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
+          DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"
+            #STOP_ON_CRITICAL_VULNS: "true"
+      - defer:
+        task: common:cleanup-workdir
+
+  distroless:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_IMAGE_SCANNER: "grype"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-buildx-distroless-java17-debian11"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/distroless/java17-debian11"
+          DOCKERFILE_NAME: "Dockerfile.distroless-java17-debian11"
+          DOCKERFILE_SCANNER: "semgrep"
+      - defer:
+        task: common:cleanup-workdir
+
+  distroless-multistage:
+    cmds:
+      - task: common:git-clone
+      - task: common:docker-pipeline
+        vars:
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-buildx-distroless-java11-debian11-multistage"
+          DOCKERFILE_NAME: "Dockerfile.distroless-java11-debian11-multistage"
+          VERIFY_BASE_IMAGE: "false"
+      - defer:
+        task: common:cleanup-workdir
+
+  cloud-native-buildpacks:
+    cmds:
+      - task: common:git-clone
+      - task: common:docker-pipeline
+        vars:
+          DOCKER_BUILD_TYPE: "cnb"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-cnb-java11"
+          VERIFY_BASE_IMAGE: "false"
+      - defer:
+        task: common:cleanup-workdir
+
+  jib:
+    cmds:
+      - task: common:java-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
+          DOCKER_BUILD_TYPE: "jib"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-jib-eclipse-temurin-17-jre-jammy"
+          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
+      - defer:
+        task: common:cleanup-workdir
