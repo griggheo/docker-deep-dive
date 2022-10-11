@@ -46,6 +46,7 @@ Docker image build mechanisms:
   * https://podman.io/blogs/2018/10/31/podman-buildah-relationship.html
 * Jib: https://github.com/GoogleContainerTools/jib
   * https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md
+  * https://snyk.io/blog/building-java-container-images-using-jib/
 
 Inspecting and manipulating Docker images:
 
@@ -64,6 +65,11 @@ Other resources:
 * https://iximiuz.com/en/posts/docker-debug-slim-containers/
 * https://ashishtechmill.com/comparing-modern-day-container-image-builders-jib-buildpacks-and-docker
 
+KO
+
+* https://snyk.io/blog/container-images-simplified-with-google-ko/
+
+Creating a new SpringBoot application: https://start.spring.io/
 
 ## Part 2 - Docker image security
 
