@@ -25,3 +25,6 @@ rm buildkit-v${BUILDKIT_VERSION}.linux-amd64.tar.gz
 CONTAINERD_NAMESPACE=default containerd-rootless-setuptool.sh install-buildkit-containerd
 
 systemctl --user status default-buildkit.service
+
+# then
+# nerdctl login YOUR_REGISTRY

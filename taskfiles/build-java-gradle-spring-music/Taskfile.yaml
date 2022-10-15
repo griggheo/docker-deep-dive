@@ -45,9 +45,9 @@ tasks:
       - task: common:java-pipeline
         vars:
           DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
-          DOCKER_BUILD_TYPE: "kaniko"
+          DOCKER_BUILD_TYPE: "nerdctl"
           DOCKER_IMAGE_SCANNER: "grype"
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-kaniko-curated-alpine3.16-openjdk17"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-nerdctl-curated-alpine3.16-openjdk17"
           DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjdk17"
       - defer:
         task: common:cleanup-workdir

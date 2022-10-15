@@ -15,7 +15,8 @@ tasks:
 
   login-docker-registry:
     cmds:
-      - echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+      - |
+        echo $GH_PAT | {{.DOCKER_BUILD_TYPE}} login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
 
   build-docker-image:
     cmds:
@@ -27,8 +28,8 @@ tasks:
          fi
           cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
         fi
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
-          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with docker
           pushd {{.DOCKER_DIR}}
             ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
             if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
@@ -36,6 +37,20 @@ tasks:
             fi
             echo Running: docker buildx build $ARGS
             docker buildx build $ARGS
+          popd
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with nerdctl/buildkitd/containerd
+          pushd {{.DOCKER_DIR}}
+            ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
+            if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
+              ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
+            fi
+            echo Running: nerdctl build $ARGS
+            nerdctl build $ARGS
+            echo Saving nerdctl image as tar file for scanning and SBOM
+            echo Running: nerdctl save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+            nerdctl save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           popd
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -84,10 +99,10 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
             ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: trivy image $ARGS
@@ -98,10 +113,10 @@ tasks:
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi 
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
             ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: grype $ARGS
@@ -114,10 +129,10 @@ tasks:
         mkdir -p {{.SCAN_RESULT_DIR}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
           ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
             ARGS="$ARGS file:{{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: syft $ARGS
@@ -139,7 +154,7 @@ tasks:
   push-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
           docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
@@ -150,6 +165,10 @@ tasks:
         if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
           podman tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           podman push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          nerdctl tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          nerdctl push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
 
   sign-docker-image:
@@ -164,7 +183,16 @@ tasks:
     cmds:
       - task: git-clone
       - task: login-docker-registry
-      - docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+      - |
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          echo Running: nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        else
+          echo Running: docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        fi
 
   publish-jar:
     cmds:
@@ -180,6 +208,8 @@ tasks:
   docker-pipeline:
     cmds:
       - task: login-docker-registry
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
       - task: scan-dockerfile
         vars:
           DOCKER_DIR: "{{.DOCKER_DIR}}"
@@ -231,6 +261,7 @@ tasks:
       - task: build-app
         vars:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
       - task: publish-jar
       # TODO
       # task: sign-jar

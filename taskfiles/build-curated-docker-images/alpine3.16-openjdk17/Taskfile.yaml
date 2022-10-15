@@ -10,7 +10,8 @@ dotenv: ['.env', '.secrets', '../.env', '../.secrets', '../../.env', '../../.sec
 tasks:
   default:
     cmds:
-      - task: common:build-push-docker-image
+      - task: common:docker-pipeline
         vars:
+          DOCKER_BUILD_TYPE: nerdctl
           DOCKER_IMAGE_NAME: alpine3.16
           DOCKER_IMAGE_TAG: openjdk17
