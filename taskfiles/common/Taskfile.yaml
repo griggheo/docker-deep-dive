@@ -16,7 +16,11 @@ tasks:
   login-docker-registry:
     cmds:
       - |
-        echo $GH_PAT | {{.DOCKER_BUILD_TYPE}} login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+        else
+          echo $GH_PAT | {{.DOCKER_BUILD_TYPE}} login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+        fi
 
   build-docker-image:
     cmds:
