@@ -28,15 +28,18 @@ tasks:
         FROM_IMAGE="{{.DOCKER_RUN_IMAGE}}"
         if [ "{{.VERIFY_BASE_IMAGE}}" == "true" ]; then
           if [ "$FROM_IMAGE" == "" ]; then
-           FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
-         fi
+            FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
+            if [ "$FROM_IMAGE" == '${BASE_IMAGE}' ]; then
+              FROM_IMAGE=$(grep 'ARG BASE_IMAGE' {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/ARG BASE_IMAGE=//g')
+            fi
+          fi
           cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with docker
           pushd {{.DOCKER_DIR}}
             ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
-            if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
+            if [ "{{.DOCKER_RUN_IMAGE}}" != "" ]; then
               ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
             fi
             echo Running: docker buildx build $ARGS
@@ -209,6 +212,15 @@ tasks:
       - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
       - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
 
+  publish-venv:
+    cmds:
+      - mkdir -p {{.ARTIFACT_DIR}}
+      - mv {{.SRC_DIR}}/{{.GH_REPO}}/venv {{.ARTIFACT_DIR}}
+
+  retrieve-venv:
+    cmds:
+      - cp -r {{.ARTIFACT_DIR}}/venv {{.SRC_DIR}}/{{.GH_REPO}}/
+
   docker-pipeline:
     cmds:
       - task: login-docker-registry
@@ -270,6 +282,30 @@ tasks:
       # TODO
       # task: sign-jar
       - task: retrieve-jar
+      - task: docker-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
+          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
+          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
+
+  python-pipeline:
+    cmds:
+      - task: build-app
+        vars:
+          DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+      - task: publish-venv
+      - task: retrieve-venv
       - task: docker-pipeline
         vars:
           DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
