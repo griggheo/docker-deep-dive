@@ -22,6 +22,13 @@ tasks:
           echo $GH_PAT | {{.DOCKER_BUILD_TYPE}} login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
         fi
 
+  create-scan-result-directory:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        rm -rf $CUSTOM_SCAN_RESULT_DIR
+        mkdir -p $CUSTOM_SCAN_RESULT_DIR
+
   build-docker-image:
     cmds:
       - |
@@ -100,9 +107,9 @@ tasks:
   scan-docker-image:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
+          ARGS="-f json -o $CUSTOM_SCAN_RESULT_DIR/trivy-scan.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
@@ -116,7 +123,7 @@ tasks:
           trivy image $ARGS
         fi
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/grype-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
+          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/grype-scan.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
@@ -133,9 +140,9 @@ tasks:
   generate-sbom-docker-image:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
+          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages"
           if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
@@ -149,12 +156,14 @@ tasks:
   scan-dockerfile:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKERFILE_SCANNER}}" == "semgrep" ]; then
-          semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | tee -a {{.SCAN_RESULT_DIR}}/semgrep-dockerfile-{{.DOCKERFILE_NAME}}.txt
+          echo Running: semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json
+          semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json | tee -a $CUSTOM_SCAN_RESULT_DIR/semgrep-dockerfile.json
         else
         #if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-dockerfile-{{.DOCKERFILE_NAME}}.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+          ARGS="-f json -o $CUSTOM_SCAN_RESULT_DIR/trivy-dockerfile.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+          echo Running: trivy config $ARGS
           trivy config $ARGS
         fi
 
@@ -185,6 +194,28 @@ tasks:
   verify-signature-docker-image:
     cmds:
       - cosign verify --key {{.COSIGN_PUBLIC_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+
+  attach-scan-result-attestations-to-docker-image:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        for scan_result_file in $(ls $CUSTOM_SCAN_RESULT_DIR); do
+          echo Attaching attestation $scan_result_file to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          COSIGN_PASSWORD=$(cat {{.HOME}}/.k) cosign attest --predicate $CUSTOM_SCAN_RESULT_DIR/$scan_result_file --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        done
+
+  verify-scan-result-attestations:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        ATTESTATION_PAYLOAD=$CUSTOM_SCAN_RESULT_DIR/attestation_payload.json
+        echo Verifying attestations attached to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        cosign verify-attestation --key $COSIGN_PUBLIC_KEY {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} | jq --slurp 'map(.payload | @base64d | fromjson | .predicate.Data | fromjson)' > $ATTESTATION_PAYLOAD
+        keys=$(cat $ATTESTATION_PAYLOAD | jq -r 'keys[]')
+        for key in $keys; do
+          echo Saving payload \#$key to file $CUSTOM_SCAN_RESULT_DIR/attestation_payload_$key.json
+          cat $ATTESTATION_PAYLOAD | jq -r  ".[$key]"  > $CUSTOM_SCAN_RESULT_DIR/attestation_payload_$key.json
+        done
 
   build-app:
     cmds:
@@ -226,8 +257,15 @@ tasks:
       - task: login-docker-registry
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: scan-dockerfile
         vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_DIR: "{{.DOCKER_DIR}}"
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
@@ -267,10 +305,20 @@ tasks:
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: attach-scan-result-attestations-to-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: verify-signature-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: verify-scan-result-attestations
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
 
   java-pipeline:
     cmds:
@@ -279,8 +327,6 @@ tasks:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
       - task: publish-jar
-      # TODO
-      # task: sign-jar
       - task: retrieve-jar
       - task: docker-pipeline
         vars:
