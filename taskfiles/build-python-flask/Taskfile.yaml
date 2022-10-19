@@ -66,9 +66,10 @@ tasks:
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:python3.10-build"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-python3-debian11"
-          DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/distroless/python3-debian11"
+            #DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/distroless/python3-debian11"
           DOCKERFILE_NAME: "Dockerfile.distroless"
           DOCKERFILE_SCANNER: "semgrep"
+          VERIFY_BASE_IMAGE: "false"
       - defer:
         task: common:cleanup-workdir
 
@@ -77,8 +78,8 @@ tasks:
       - task: common:git-clone
       - task: common:docker-pipeline
         vars:
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-buildx-distroless-java11-debian11-multistage"
-          DOCKERFILE_NAME: "Dockerfile.distroless-java11-debian11-multistage"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-python3-debian11-multistage"
+          DOCKERFILE_NAME: "Dockerfile.distroless-multistage"
           VERIFY_BASE_IMAGE: "false"
       - defer:
         task: common:cleanup-workdir
