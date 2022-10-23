@@ -1,24 +1,33 @@
 #!/bin/bash
 
-trivy image --format sarif -o report-golang.sarif  golang:1.16-alpine
+#IMAGE=golang:1.16-alpine
+#IMAGE=golang:1.17-alpine
+#IMAGE=golang:1.18-alpine
+IMAGE=gcr.io/distroless/python3-debian11:latest
+REPORT=trivy_report.sarif
 
-# Scan tool info
-cat report-golang.sarif |jq '.runs[0].tool.driver.fullName, .runs[0].tool.driver.informationUri,.runs[0].tool.driver.name, .runs[0].tool.driver.version'
+trivy image --format sarif -o $REPORT $IMAGE
 
-# CVE list
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[].id'
+echo Scan tool info
+cat $REPORT |jq '.runs[0].tool.driver.fullName, .runs[0].tool.driver.informationUri,.runs[0].tool.driver.name, .runs[0].tool.driver.version'
+echo
 
-# CVE + URL
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[]|.id,.helpUri'
+echo CVE list
+cat $REPORT |jq '.runs[0].tool.driver.rules[].id'
+echo
 
-# CVE + URL + help text
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[]|.id,.helpUri,.help.text'
+echo CVE + URL
+cat $REPORT |jq '.runs[0].tool.driver.rules[]|.id,.helpUri'
+echo
 
-# CVE + severity
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[]|.id,.properties."security-severity"'
+echo CVE + URL + help text
+cat $REPORT |jq '.runs[0].tool.driver.rules[]|.id,.helpUri,.help.text'
+echo
 
-# CVE + severity + TAGS
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[]|.id,.properties."security-severity",.properties.tags'
+echo CVE + severity
+cat $REPORT |jq '.runs[0].tool.driver.rules[]|.id,.properties."security-severity"'
+echo
 
-# Select records with severity > 7
-cat report-golang.sarif |jq '.runs[0].tool.driver.rules[] | select(.properties."security-severity">"7")'
+echo Select records with severity score greater than 7
+cat $REPORT |jq '.runs[0].tool.driver.rules[] | select(.properties."security-severity">"7")' | jq ".id,.helpUri,.fullDescription.text"
+echo
