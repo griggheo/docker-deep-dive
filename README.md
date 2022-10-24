@@ -85,6 +85,7 @@ Creating a new SpringBoot application: https://start.spring.io/
 
 * Trivy
 * Grype: https://github.com/anchore/grype
+* SARIF format: https://sarifweb.azurewebsites.net/
 
 ### Generating SBOMs from Docker images
 
