@@ -50,18 +50,3 @@ crane manifest gcr.io/google_containers/busybox:latest | jq -r '.'
 
 echo Running: crane export gcr.io/google_containers/busybox busybox.tar
 crane export gcr.io/google_containers/busybox:latest busybox.tar
-
-echo Running: crane ls nginx:latest
-crane ls docker.io/nginx
-
-echo Running: crane export docker.io/nginx:1.23.1-alpine nginx_1.23.1-alpine.tar
-crane export docker.io/nginx:1.23.1-alpine nginx_1.23.1-alpine.tar
-
-echo Running: crane copy docker.io/nginx:1.23.1-alpine localhost:5001/nginx:1.23.1-alpine
-crane copy docker.io/nginx:1.23.1-alpine localhost:5001/nginx:1.23.1-alpine
-
-echo Running: crane digest localhost:5001/nginx:1.23.1-alpine
-crane digest localhost:5001/nginx:1.23.1-alpine
-
-echo Running: crane delete localhost:5001/nginx@sha256:b87c350e6c69e0dc7069093dcda226c4430f3836682af4f649f2af9e9b5f1c74
-crane delete localhost:5001/nginx@sha256:b87c350e6c69e0dc7069093dcda226c4430f3836682af4f649f2af9e9b5f1c74

@@ -20,7 +20,7 @@ env:
   SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
   SCAN_RESULT_DIR: "./{{.SCAN_RESULT_DIR_NAME}}"
   DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
-  DOCKER_BUILD_TYPE: "buildx"
+  DOCKER_BUILD_TYPE: "docker"
   DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
   DOCKER_IMAGE_SCANNER: "trivy"
   DOCKERFILE_SCANNER: "trivy"
@@ -45,9 +45,8 @@ tasks:
       - task: common:java-pipeline
         vars:
           DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
-          DOCKER_BUILD_TYPE: "kaniko"
           DOCKER_IMAGE_SCANNER: "grype"
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-kaniko-curated-alpine3.16-openjdk17"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-curated-alpine3.16-openjdk17"
           DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjdk17"
       - defer:
         task: common:cleanup-workdir
@@ -57,8 +56,7 @@ tasks:
       - task: common:java-pipeline
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
-          DOCKER_BUILD_TYPE: "podman"
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-podman-eclipse-temurin-17-jre-jammy"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-temurin-17-jre-jammy"
           DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
           DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"
             #STOP_ON_CRITICAL_VULNS: "true"
@@ -71,7 +69,7 @@ tasks:
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
           DOCKER_IMAGE_SCANNER: "grype"
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-buildx-distroless-java17-debian11"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java17-debian11"
           DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/distroless/java17-debian11"
           DOCKERFILE_NAME: "Dockerfile.distroless-java17-debian11"
           DOCKERFILE_SCANNER: "semgrep"
@@ -83,7 +81,7 @@ tasks:
       - task: common:git-clone
       - task: common:docker-pipeline
         vars:
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-buildx-distroless-java11-debian11-multistage"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-distroless-java11-debian11-multistage"
           DOCKERFILE_NAME: "Dockerfile.distroless-java11-debian11-multistage"
           VERIFY_BASE_IMAGE: "false"
       - defer:

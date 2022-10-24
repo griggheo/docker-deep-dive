@@ -20,7 +20,7 @@ env:
   SRC_DIR: "{{.WORKDIR}}/{{.SRC_DIR_NAME}}"
   SCAN_RESULT_DIR: "./{{.SCAN_RESULT_DIR_NAME}}"
   DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
-  DOCKER_BUILD_TYPE: "buildx"
+  DOCKER_BUILD_TYPE: "docker"
   DOCKER_IMAGE_NAME: "{{.GH_REPO}}"
   DOCKER_IMAGE_SCANNER: "trivy"
   DOCKERFILE_SCANNER: "trivy"
@@ -57,7 +57,6 @@ tasks:
       - task: common:java-pipeline
         vars:
           DOCKER_BUILD_IMAGE: "ubuntu22.04:openjdk17"
-          DOCKER_BUILD_TYPE: "podman"
           DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-podman-eclipse-temurin-17-jre-jammy"
           DOCKER_RUN_IMAGE: "ghcr.io/codepraxis-io/library/eclipse-temurin:17-jre-jammy"
           DOCKERFILE_NAME: "Dockerfile.eclipse-temurin-17-jre-jammy"

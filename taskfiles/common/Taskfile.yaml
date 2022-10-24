@@ -15,7 +15,18 @@ tasks:
 
   login-docker-registry:
     cmds:
-      - echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+      - |
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          echo $GH_PAT | docker login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+        else
+          echo $GH_PAT | {{.DOCKER_BUILD_TYPE}} login {{.DOCKER_REGISTRY}} -u {{.DOCKER_USERNAME}} --password-stdin
+        fi
+
+  create-scan-result-directory:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        mkdir -p $CUSTOM_SCAN_RESULT_DIR
 
   build-docker-image:
     cmds:
@@ -23,19 +34,36 @@ tasks:
         FROM_IMAGE="{{.DOCKER_RUN_IMAGE}}"
         if [ "{{.VERIFY_BASE_IMAGE}}" == "true" ]; then
           if [ "$FROM_IMAGE" == "" ]; then
-           FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
-         fi
+            FROM_IMAGE=$(grep FROM {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/FROM\s+//g')
+            if [ "$FROM_IMAGE" == '${BASE_IMAGE}' ]; then
+              FROM_IMAGE=$(grep 'ARG BASE_IMAGE' {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | sed -r 's/ARG BASE_IMAGE=//g')
+            fi
+          fi
           cosign verify --key {{.COSIGN_PUBLIC_KEY}} $FROM_IMAGE
         fi
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ]; then
-          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with buildx
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with docker
+          pushd {{.DOCKER_DIR}}
+            ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
+            if [ "{{.DOCKER_RUN_IMAGE}}" != "" ]; then
+              ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
+            fi
+            echo Running: docker buildx build $ARGS
+            docker buildx build $ARGS
+          popd
+        fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with nerdctl/buildkitd/containerd
           pushd {{.DOCKER_DIR}}
             ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
             if [ "{{.DOCKER_RUN_IMAGE}}" ]; then
               ARGS="$ARGS --build-arg BASE_IMAGE={{.DOCKER_RUN_IMAGE}}"
             fi
-            echo Running: docker buildx build $ARGS
-            docker buildx build $ARGS
+            echo Running: nerdctl build $ARGS
+            nerdctl build $ARGS
+            echo Saving nerdctl image as tar file for scanning and SBOM
+            echo Running: nerdctl save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+            nerdctl save -o {{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           popd
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ]; then
@@ -78,30 +106,56 @@ tasks:
   scan-docker-image:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
+          ARGS="-f json -o $CUSTOM_SCAN_RESULT_DIR/trivy-scan.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="--exit-code 1 --severity CRITICAL $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+            ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
+          fi
+          echo Running: trivy image $ARGS
+          trivy image $ARGS
+          # Generate sarif format as well
+          ARGS="-f sarif -o $CUSTOM_SCAN_RESULT_DIR/trivy-scan-sarif.json"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="--exit-code 1 --severity CRITICAL $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
             ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: trivy image $ARGS
           trivy image $ARGS
         fi
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/grype-scan-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json"
+          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/grype-scan.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
             ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           fi 
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+            ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
+          fi
+          echo Running: grype $ARGS
+          grype $ARGS
+          # Generate sarif format as well
+          ARGS="-o sarif --file $CUSTOM_SCAN_RESULT_DIR/grype-scan-sarif.json"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="-f Critical $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi 
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
             ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
           fi
           echo Running: grype $ARGS
@@ -111,35 +165,35 @@ tasks:
   generate-sbom-docker-image:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
-          ARGS="-o json --file {{.SCAN_RESULT_DIR}}/syft-sbom-{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
-            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
-          fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
-            ARGS="$ARGS file:{{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
-          fi
+          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           echo Running: syft $ARGS
           syft $ARGS
+          # Also create cosign attestation in one go
+          ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          echo Running: syft attest $ARGS
+          COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > ./scan_results/flask-bootstrap-0.0.1-alpine3.16-python3.10/syft-sbom-att.json
         fi
 
   scan-dockerfile:
     cmds:
       - |
-        mkdir -p {{.SCAN_RESULT_DIR}}
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKERFILE_SCANNER}}" == "semgrep" ]; then
-          semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | tee -a {{.SCAN_RESULT_DIR}}/semgrep-dockerfile-{{.DOCKERFILE_NAME}}.txt
+          echo Running: semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json
+          semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json | tee -a $CUSTOM_SCAN_RESULT_DIR/semgrep-dockerfile.json
         else
         #if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
-          ARGS="-f json -o {{.SCAN_RESULT_DIR}}/trivy-dockerfile-{{.DOCKERFILE_NAME}}.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+          ARGS="-f json -o $CUSTOM_SCAN_RESULT_DIR/trivy-dockerfile.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
+          echo Running: trivy config $ARGS
           trivy config $ARGS
         fi
 
   push-docker-image:
     cmds:
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "buildx" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
           docker tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           docker push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
@@ -151,6 +205,10 @@ tasks:
           podman tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           podman push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         fi
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          nerdctl tag {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          nerdctl push {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        fi
 
   sign-docker-image:
     cmds:
@@ -160,11 +218,48 @@ tasks:
     cmds:
       - cosign verify --key {{.COSIGN_PUBLIC_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
 
+  attach-scan-result-attestations-to-docker-image:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        for scan_result_file in $(ls $CUSTOM_SCAN_RESULT_DIR); do
+          echo Attaching attestation $scan_result_file to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+          COSIGN_PASSWORD=$(cat {{.HOME}}/.k) cosign attest --predicate $CUSTOM_SCAN_RESULT_DIR/$scan_result_file --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        done
+
+  verify-scan-result-attestations:
+    cmds:
+      - |
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        ATTESTATION_PAYLOAD=$CUSTOM_SCAN_RESULT_DIR/attestation_payload.json
+        echo Verifying attestations attached to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        cosign verify-attestation --key $COSIGN_PUBLIC_KEY {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} | jq --slurp 'map(.payload | @base64d | fromjson | .predicate.Data)' > $ATTESTATION_PAYLOAD
+        keys=$(cat $ATTESTATION_PAYLOAD | jq -r 'keys[]')
+        for key in $keys; do
+          echo Saving payload \#$key to file $CUSTOM_SCAN_RESULT_DIR/attestation_payload_$key.json
+          cat $ATTESTATION_PAYLOAD | jq -r  ".[$key]"  > $CUSTOM_SCAN_RESULT_DIR/attestation_payload_$key.json
+        done
+
   build-app:
     cmds:
       - task: git-clone
       - task: login-docker-registry
-      - docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+      - |
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          echo Running: nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        else
+          echo Running: docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        fi
+        # copy cycloneDX SBOM if it was generated
+        CYCLONEDX_SBOM_FILE={{.SRC_DIR}}/{{.GH_REPO}}/cyclonedx-sbom.json
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        if [ -f $CYCLONEDX_SBOM_FILE ]; then
+          cp $CYCLONEDX_SBOM_FILE $CUSTOM_SCAN_RESULT_DIR
+        fi
 
   publish-jar:
     cmds:
@@ -177,11 +272,29 @@ tasks:
       - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
       - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
 
+  publish-venv:
+    cmds:
+      - mkdir -p {{.ARTIFACT_DIR}}
+      - mv {{.SRC_DIR}}/{{.GH_REPO}}/venv {{.ARTIFACT_DIR}}
+
+  retrieve-venv:
+    cmds:
+      - cp -r {{.ARTIFACT_DIR}}/venv {{.SRC_DIR}}/{{.GH_REPO}}/
+
   docker-pipeline:
     cmds:
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: login-docker-registry
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: scan-dockerfile
         vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_DIR: "{{.DOCKER_DIR}}"
           DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
@@ -205,6 +318,11 @@ tasks:
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+      - task: push-docker-image
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: generate-sbom-docker-image
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
@@ -212,29 +330,69 @@ tasks:
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-      - task: push-docker-image
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: sign-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: attach-scan-result-attestations-to-docker-image
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: verify-signature-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: verify-scan-result-attestations
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
 
   java-pipeline:
     cmds:
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: build-app
         vars:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: publish-jar
-      # TODO
-      # task: sign-jar
       - task: retrieve-jar
+      - task: docker-pipeline
+        vars:
+          DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_DIR: "{{.SRC_DIR}}/{{.GH_REPO}}"
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_SCANNER: "{{.DOCKER_IMAGE_SCANNER}}"
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+          DOCKER_RUN_IMAGE: '{{.DOCKER_RUN_IMAGE}}'
+          DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
+          DOCKERFILE_NAME: '{{.DOCKERFILE_NAME}}'
+          DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
+          SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
+          STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+          VERIFY_BASE_IMAGE: '{{.VERIFY_BASE_IMAGE}}'
+
+  python-pipeline:
+    cmds:
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: build-app
+        vars:
+          DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: publish-venv
+      - task: retrieve-venv
       - task: docker-pipeline
         vars:
           DOCKER_BUILD_IMAGE: '{{.DOCKER_BUILD_IMAGE}}'
