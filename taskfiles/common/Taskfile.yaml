@@ -120,9 +120,35 @@ tasks:
           fi
           echo Running: trivy image $ARGS
           trivy image $ARGS
+          # Generate sarif format as well
+          ARGS="-f sarif -o $CUSTOM_SCAN_RESULT_DIR/trivy-scan-sarif.json"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="--exit-code 1 --severity CRITICAL $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+            ARGS="$ARGS --input {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
+          fi
+          echo Running: trivy image $ARGS
+          trivy image $ARGS
         fi
         if [ "{{.DOCKER_IMAGE_SCANNER}}" == "grype" ]; then
           ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/grype-scan.json"
+          if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
+            ARGS="-f Critical $ARGS"
+          fi
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          fi 
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+            ARGS="$ARGS {{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
+          fi
+          echo Running: grype $ARGS
+          grype $ARGS
+          # Generate sarif format as well
+          ARGS="-o sarif --file $CUSTOM_SCAN_RESULT_DIR/grype-scan-sarif.json"
           if [ "{{.STOP_ON_CRITICAL_VULNS}}" == "true" ]; then
             ARGS="-f Critical $ARGS"
           fi
@@ -141,15 +167,13 @@ tasks:
       - |
         CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         if [ "{{.DOCKER_SBOM_GENERATOR}}" == "syft" ]; then
-          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages"
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "cnb" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
-            ARGS="$ARGS {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
-          fi
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "kaniko" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
-            ARGS="$ARGS file:{{.DOCKER_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar"
-          fi
+          ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           echo Running: syft $ARGS
           syft $ARGS
+          # Also create cosign attestation in one go
+          ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          echo Running: syft attest $ARGS
+          COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > ./scan_results/flask-bootstrap-0.0.1-alpine3.16-python3.10/syft-sbom-att.json
         fi
 
   scan-dockerfile:
@@ -294,6 +318,11 @@ tasks:
           DOCKERFILE_SCANNER: "{{.DOCKERFILE_SCANNER}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
           STOP_ON_CRITICAL_VULNS: "{{.STOP_ON_CRITICAL_VULNS}}"
+      - task: push-docker-image
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: generate-sbom-docker-image
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
@@ -301,11 +330,6 @@ tasks:
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
           DOCKER_SBOM_GENERATOR: "{{.DOCKER_SBOM_GENERATOR}}"
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
-      - task: push-docker-image
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
-          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
-          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: sign-docker-image
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
