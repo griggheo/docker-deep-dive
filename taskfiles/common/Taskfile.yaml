@@ -26,7 +26,6 @@ tasks:
     cmds:
       - |
         CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
-        rm -rf $CUSTOM_SCAN_RESULT_DIR
         mkdir -p $CUSTOM_SCAN_RESULT_DIR
 
   build-docker-image:
@@ -210,7 +209,7 @@ tasks:
         CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
         ATTESTATION_PAYLOAD=$CUSTOM_SCAN_RESULT_DIR/attestation_payload.json
         echo Verifying attestations attached to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
-        cosign verify-attestation --key $COSIGN_PUBLIC_KEY {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} | jq --slurp 'map(.payload | @base64d | fromjson | .predicate.Data | fromjson)' > $ATTESTATION_PAYLOAD
+        cosign verify-attestation --key $COSIGN_PUBLIC_KEY {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} | jq --slurp 'map(.payload | @base64d | fromjson | .predicate.Data)' > $ATTESTATION_PAYLOAD
         keys=$(cat $ATTESTATION_PAYLOAD | jq -r 'keys[]')
         for key in $keys; do
           echo Saving payload \#$key to file $CUSTOM_SCAN_RESULT_DIR/attestation_payload_$key.json
@@ -230,6 +229,12 @@ tasks:
         else
           echo Running: docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
           docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        fi
+        # copy cycloneDX SBOM if it was generated
+        CYCLONEDX_SBOM_FILE={{.SRC_DIR}}/{{.GH_REPO}}/cyclonedx-sbom.json
+        CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
+        if [ -f $CYCLONEDX_SBOM_FILE ]; then
+          cp $CYCLONEDX_SBOM_FILE $CUSTOM_SCAN_RESULT_DIR
         fi
 
   publish-jar:
@@ -254,13 +259,13 @@ tasks:
 
   docker-pipeline:
     cmds:
-      - task: login-docker-registry
-        vars:
-          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
       - task: create-scan-result-directory
         vars:
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
+      - task: login-docker-registry
+        vars:
+          DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           SCAN_RESULT_DIR: "{{.SCAN_RESULT_DIR}}"
       - task: scan-dockerfile
         vars:
@@ -322,10 +327,16 @@ tasks:
 
   java-pipeline:
     cmds:
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: build-app
         vars:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: publish-jar
       - task: retrieve-jar
       - task: docker-pipeline
@@ -346,10 +357,16 @@ tasks:
 
   python-pipeline:
     cmds:
+      - task: create-scan-result-directory
+        vars:
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: build-app
         vars:
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
+          DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
+          DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: publish-venv
       - task: retrieve-venv
       - task: docker-pipeline
