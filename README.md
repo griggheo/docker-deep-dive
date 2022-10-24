@@ -40,6 +40,8 @@ Docker image build mechanisms:
 * Cloud Native Buildpacks: https://buildpacks.io/
   * https://paketo.io/
   * https://paketo.io/docs/howto/java/
+* Nerdctl: https://github.com/containerd/nerdctl
+  * https://medium.com/nttlabs/nerdctl-359311b32d0e
 * Podman https://github.com/containers/podman
   * Buildah: https://github.com/containers/buildah
   * https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics
@@ -47,6 +49,7 @@ Docker image build mechanisms:
 * Jib: https://github.com/GoogleContainerTools/jib
   * https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md
   * https://snyk.io/blog/building-java-container-images-using-jib/
+
 
 Inspecting and manipulating Docker images:
 
@@ -89,9 +92,17 @@ Creating a new SpringBoot application: https://start.spring.io/
 * Syft: https://github.com/anchore/syft
   * Syft and Grype: https://medium.com/rahasak/container-vulnerability-scan-with-syft-and-grype-f4ec9cd4d7f1
 
+### Generating CycloneDX and SPDX SBOMs from code
+
+* CycloneDX
+  https://github.com/CycloneDX/cyclonedx-python
+* SPDX
+  * https://github.com/microsoft/sbom-tool
+  * https://security.googleblog.com/2022/06/sbom-in-action-finding-vulnerabilities.html
+  * https://github.com/spdx/spdx-to-osv/
+
 More SBOM resources
 * https://mergebase.com/blog/best-tools-for-generating-sbom/
-* https://github.com/microsoft/sbom-tool
 * https://github.com/opensbom-generator/spdx-sbom-generator
 * https://pedrodelgallego.github.io/blog/engineering/capabilities/security/software-bill-of-materials-devsecops/
 * https://github.com/devops-kung-fu/bomber
