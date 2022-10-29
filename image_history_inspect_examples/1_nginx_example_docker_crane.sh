@@ -83,6 +83,7 @@ crane digest $IMAGE:$TAG
 echo
 echo crane digest ghcr.io/codepraxis-io/$IMAGE:$TAG
 crane digest ghcr.io/codepraxis-io/$IMAGE:$TAG
+
 #echo
 #echo dive $IMAGE:$TAG
 #dive $IMAGE:$TAG
