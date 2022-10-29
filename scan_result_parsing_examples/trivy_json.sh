@@ -1,9 +1,14 @@
 #!/bin/bash
 
-IMAGE=golang:1.16-alpine
+IMAGE=$1
+if [ "$IMAGE" == "" ]; then
+  IMAGE=golang:1.16-alpine
+fi
 #IMAGE=golang:1.17-alpine
 #IMAGE=golang:1.18-alpine
 #IMAGE=gcr.io/distroless/python3-debian11:latest
+#crane ls ghcr.io/codepraxis-io/flask-bootstrap | grep 0.0.1|grep podman
+#
 REPORT=trivy_report.json
 
 trivy image --format json -o $REPORT $IMAGE
