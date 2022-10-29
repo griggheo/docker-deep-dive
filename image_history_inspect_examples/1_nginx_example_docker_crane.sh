@@ -10,10 +10,6 @@ crane ls $IMAGE
 TAG=stable-alpine
 
 echo
-echo crane digest $IMAGE:$TAG
-crane digest $IMAGE:$TAG
-
-echo
 echo docker pull $IMAGE:$TAG
 docker pull $IMAGE:$TAG
 
@@ -76,6 +72,17 @@ echo
 echo tar tvf crane-export-$IMAGE-$TAG.tar
 tar tvf crane-export-$IMAGE-$TAG.tar > crane-export-$IMAGE-$TAG-tar-contents.txt
 
+echo
+echo crane copy $IMAGE:$TAG ghcr.io/codepraxis-io/$IMAGE:$TAG
+crane copy $IMAGE:$TAG ghcr.io/codepraxis-io/$IMAGE:$TAG
+
+echo
+echo crane digest $IMAGE:$TAG
+crane digest $IMAGE:$TAG
+
+echo
+echo crane digest ghcr.io/codepraxis-io/$IMAGE:$TAG
+crane digest ghcr.io/codepraxis-io/$IMAGE:$TAG
 #echo
 #echo dive $IMAGE:$TAG
 #dive $IMAGE:$TAG
