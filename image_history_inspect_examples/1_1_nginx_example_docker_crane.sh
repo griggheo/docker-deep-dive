@@ -65,7 +65,7 @@ CONFIG=$(cat docker-save-$IMAGE-$TAG/manifest.json | jq -r '.[0].Config')
 cat docker-save-$IMAGE-$TAG/$CONFIG | jq -r '.' | tee docker-config-from-tar-$IMAGE-$TAG.json
 
 echo
-echo crane export $IMAGE:$TAG > crane-export-$IMAGE-$TAG.tar
+echo crane export $IMAGE:$TAG
 crane export $IMAGE:$TAG > crane-export-$IMAGE-$TAG.tar
 
 echo
