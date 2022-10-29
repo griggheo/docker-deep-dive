@@ -87,8 +87,6 @@ tasks:
           popd
         fi
         if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
-          echo Stopping docker service
-          sudo systemctl stop docker
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with podman
           pushd {{.DOCKER_DIR}}
             ARGS="-t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} . -f {{.DOCKERFILE_NAME}}"
@@ -170,10 +168,12 @@ tasks:
           ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           echo Running: syft $ARGS
           syft $ARGS
-          # Also create cosign attestation in one go
-          ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
-          echo Running: syft attest $ARGS
-          COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > ./scan_results/flask-bootstrap-0.0.1-alpine3.16-python3.10/syft-sbom-att.json
+          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+            # Also create cosign attestation in one go
+            ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+            echo Running: syft attest $ARGS
+            COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > ./scan_results/flask-bootstrap-0.0.1-alpine3.16-python3.10/syft-sbom-att.json
+          fi
         fi
 
   scan-dockerfile:
@@ -247,12 +247,12 @@ tasks:
         vars:
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
       - |
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
-          echo Running: nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
-          nerdctl run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "podman" ]; then
+          echo Running: {{.DOCKER_BUILD_TYPE}} run --privileged -u root --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          {{.DOCKER_BUILD_TYPE}} run --privileged -u root --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
         else
-          echo Running: docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
-          docker run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          echo Running: {{.DOCKER_BUILD_TYPE}} run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          {{.DOCKER_BUILD_TYPE}} run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
         fi
         # copy cycloneDX SBOM if it was generated
         CYCLONEDX_SBOM_FILE={{.SRC_DIR}}/{{.GH_REPO}}/cyclonedx-sbom.json
