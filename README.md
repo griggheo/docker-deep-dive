@@ -57,7 +57,7 @@ Inspecting and manipulating Docker images:
 * Crane: https://github.com/google/go-containerregistry/tree/main/cmd/crane
 * ORAS: https://github.com/oras-project/oras
 * Skopeo: https://github.com/containers/skopeo
-* https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
+
 
 Other resources:
 
@@ -67,6 +67,8 @@ Other resources:
 * https://github.com/iximiuz/awesome-container-tinkering
 * https://iximiuz.com/en/posts/docker-debug-slim-containers/
 * https://ashishtechmill.com/comparing-modern-day-container-image-builders-jib-buildpacks-and-docker
+* https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
+* https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
 
 KO
 
