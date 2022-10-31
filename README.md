@@ -61,14 +61,18 @@ Inspecting and manipulating Docker images:
 
 Other resources:
 
+* https://github.com/iximiuz/awesome-container-tinkering
+* https://github.com/iximiuz/cdebug
+
+* http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
 * https://lwn.net/Articles/902049/
 * https://www.tutorialworks.com/difference-docker-containerd-runc-crio-oci/
 * https://containers.gitbook.io/build-containers-the-hard-way/
-* https://github.com/iximiuz/awesome-container-tinkering
 * https://iximiuz.com/en/posts/docker-debug-slim-containers/
 * https://ashishtechmill.com/comparing-modern-day-container-image-builders-jib-buildpacks-and-docker
 * https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
 * https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
+* https://medium.com/geekculture/create-docker-images-without-docker-daemon-kaniko-847a688155a6
 
 KO
 
