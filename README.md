@@ -58,6 +58,7 @@ Inspecting and manipulating Docker images:
 * ORAS: https://github.com/oras-project/oras
 * Skopeo: https://github.com/containers/skopeo
 
+* DockerHub OCI Artifact support: https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/
 
 Other resources:
 
