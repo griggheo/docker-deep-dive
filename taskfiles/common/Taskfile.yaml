@@ -266,12 +266,12 @@ tasks:
     cmds:
       - mkdir -p {{.ARTIFACT_DIR}}
         #- find {{.SRC_DIR}}/ -regextype posix-basic -regex  ".*{{.BUILD_DIR}}\/{{.GH_REPO}}-{{.APP_VERSION}}\.jar" -exec cp {} {{.ARTIFACT_DIR}} \;
-      - mv {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}\.jar {{.ARTIFACT_DIR}}
+      - sudo mv {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}\.jar {{.ARTIFACT_DIR}}
 
   retrieve-jar:
     cmds:
       - mkdir -p {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}
-      - cp {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
+      - sudo mv {{.ARTIFACT_DIR}}/{{.GH_REPO}}-{{.APP_VERSION}}.jar {{.SRC_DIR}}/{{.GH_REPO}}/{{.BUILD_DIR}}/app.jar
 
   publish-venv:
     cmds:
