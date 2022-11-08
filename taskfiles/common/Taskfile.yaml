@@ -43,8 +43,10 @@ tasks:
           if [ "{{.DOCKER_COMMAND}}" == "podman" ]; then 
             REGISTRY_AUTH_FILE={{.XDG_RUNTIME_DIR}}/containers/auth.json
             {{.DOCKER_COMMAND}} run --privileged -v `pwd`/{{.DOCKER_DIR}}:/workspace -v $REGISTRY_AUTH_FILE:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --tarPath /workspace/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar --no-push
-          fi
-          if [ "{{.DOCKER_COMMAND}}" != "podman" ]; then 
+          elif [ "{{.DOCKER_COMMAND}}" == "nerdctl" ]; then 
+            REGISTRY_AUTH_FILE={{.HOME}}/.docker/config.json
+            {{.DOCKER_COMMAND}} run --cni-path=/opt/cni/bin -v `pwd`/{{.DOCKER_DIR}}:/workspace -v $REGISTRY_AUTH_FILE:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --tarPath /workspace/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar --no-push
+          else
             REGISTRY_AUTH_FILE={{.HOME}}/.docker/config.json
             {{.DOCKER_COMMAND}} run -v `pwd`/{{.DOCKER_DIR}}:/workspace -v $REGISTRY_AUTH_FILE:/kaniko/.docker/config.json:ro gcr.io/kaniko-project/executor:latest --dockerfile /workspace/{{.DOCKERFILE_NAME}} --destination {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} --context dir:///workspace/ --tarPath /workspace/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}.tar --no-push
           fi
@@ -57,7 +59,7 @@ tasks:
             pack build {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           popd
         fi
-        if [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ]; then
+        if [ "{{.DOCKER_BUILD_TYPE}}" == "jib" ] && [ "{{.DOCKER_COMMAND}}" != "nerdctl" ]; then
           echo Building {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} with jib
           pushd {{.DOCKER_DIR}}
             echo Running: jib jar --from {{.DOCKER_RUN_IMAGE}} --target docker://{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} {{.BUILD_DIR}}/app.jar
@@ -175,7 +177,7 @@ tasks:
             # Also create cosign attestation in one go
             ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
             echo Running: syft attest $ARGS
-            COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > ./scan_results/flask-bootstrap-0.0.1-alpine3.16-python3.10/syft-sbom-att.json
+            COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > {{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}/syft-sbom-att.json
           fi
         fi
 
@@ -246,6 +248,9 @@ tasks:
         if [ "{{.DOCKER_COMMAND}}" == "podman" ]; then
           echo Running: {{.DOCKER_COMMAND}} run --privileged -u root --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
           {{.DOCKER_COMMAND}} run --privileged -u root --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+        elif [ "{{.DOCKER_COMMAND}}" == "nerdctl" ]; then
+          echo Running: {{.DOCKER_COMMAND}} run --cni-path=/opt/cni/bin --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
+          {{.DOCKER_COMMAND}} run --cni-path=/opt/cni/bin --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
         else
           echo Running: {{.DOCKER_COMMAND}} run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
           {{.DOCKER_COMMAND}} run --rm -v `pwd`/{{.WORKDIR}}:/tmp/workspace {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_BUILD_IMAGE}} bash -c "cd /tmp/workspace/{{.SRC_DIR_NAME}}/{{.GH_REPO}}; bash {{.BUILD_SCRIPT}}"
@@ -355,6 +360,7 @@ tasks:
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: build-app
         vars:
+          BUILD_SCRIPT: "{{.BUILD_SCRIPT}}"
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_COMMAND: '{{.DOCKER_COMMAND}}'
@@ -387,6 +393,7 @@ tasks:
           DOCKER_IMAGE_TAG: '{{.DOCKER_IMAGE_TAG}}'
       - task: build-app
         vars:
+          BUILD_SCRIPT: "{{.BUILD_SCRIPT}}"
           DOCKER_BUILD_IMAGE: "{{.DOCKER_BUILD_IMAGE}}"
           DOCKER_BUILD_TYPE: '{{.DOCKER_BUILD_TYPE}}'
           DOCKER_IMAGE_NAME: '{{.DOCKER_IMAGE_NAME}}'
