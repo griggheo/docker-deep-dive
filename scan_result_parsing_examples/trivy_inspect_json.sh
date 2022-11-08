@@ -1,17 +1,6 @@
 #!/bin/bash
 
-IMAGE=$1
-if [ "$IMAGE" == "" ]; then
-  IMAGE=golang:1.16-alpine
-fi
-#IMAGE=golang:1.17-alpine
-#IMAGE=golang:1.18-alpine
-#IMAGE=gcr.io/distroless/python3-debian11:latest
-#crane ls ghcr.io/codepraxis-io/flask-bootstrap | grep 0.0.1|grep podman
-#
-REPORT=trivy_report.json
-
-trivy image --format json -o $REPORT $IMAGE
+REPORT=$1
 
 echo Vulnerabilities
 cat $REPORT | jq '.Results[0].Vulnerabilities[]'
@@ -39,5 +28,5 @@ cat $REPORT | jq '.Results[0].Vulnerabilities[]|.VulnerabilityID,.Severity,.CVSS
 echo
 
 echo Select records with severity score greater than 7
-cat trivy_report.json | jq '.Results[0].Vulnerabilities[]|select(.CVSS.nvd.V3Score>7)' | jq '.VulnerabilityID,.PrimaryURL,.Title,.Severity,.CVSS.nvd.V3Score'
+cat $REPORT | jq '.Results[0].Vulnerabilities[]|select(.CVSS.nvd.V3Score>7)' | jq '.VulnerabilityID,.PrimaryURL,.Title,.Severity,.CVSS.nvd.V3Score'
 echo
