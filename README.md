@@ -2,22 +2,22 @@
 
 ## Part 1 - Building and interacting with Docker images
 
-### Using Taskfiles for local pipelines
+**Using Taskfiles for local pipelines**
 
 * Task: https://taskfile.dev/#/
 * https://dev.to/stack-labs/introduction-to-taskfile-a-makefile-alternative-h92
 
-### Building curated Docker images
+**Building curated Docker images**
 
 * https://github.com/codepraxis-io/docker-deep-dive/tree/main/taskfiles/build-curated-docker-images
 * https://github.com/orgs/codepraxis-io/packages/container/package/ubuntu22.04
 * https://github.com/orgs/codepraxis-io/packages/container/package/alpine3.16
 
-### Building a Java SpringBoot app and creating Docker images based on various base images
+**Building a Java SpringBoot app and creating Docker images based on various base images**
 
 * https://github.com/codepraxis-io/docker-deep-dive/blob/main/taskfiles/build-app-java/Taskfile.yaml
 
-Dockerfiles:
+**Dockerfiles**
 
 * https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.amazoncorretto-17-alpine3-15
 * https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.eclipse-temurin-17-jre-jammy
@@ -26,13 +26,13 @@ Dockerfiles:
 * https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.distroless-java11-debian11-multistage
 * https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.curated-alpine3.16-openjdk17
 
-Docker images available to use as base images:
+**Docker images available to use as base images**
 
 * Distroless: https://github.com/GoogleContainerTools/distroless
   * https://iximiuz.com/en/posts/containers-distroless-images/
 * Distroless vs alpine: https://itnext.io/which-container-images-to-use-distroless-or-alpine-96e3dab43a22
 
-Docker image build mechanisms:
+**Docker image build mechanisms**
 
 * Docker Buildx: https://github.com/docker/buildx
 * Kaniko: https://github.com/GoogleContainerTools/kaniko
@@ -52,7 +52,7 @@ Docker image build mechanisms:
   * https://snyk.io/blog/building-java-container-images-using-jib/
 
 
-Inspecting and manipulating Docker images:
+**Inspecting and manipulating Docker images**
 
 * Dive: https://github.com/wagoodman/dive
 * Crane: https://github.com/google/go-containerregistry/tree/main/cmd/crane
@@ -61,7 +61,7 @@ Inspecting and manipulating Docker images:
 
 * DockerHub OCI Artifact support: https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/
 
-Other resources:
+**Other resources**
 
 * https://github.com/iximiuz/awesome-container-tinkering
 * https://github.com/iximiuz/cdebug
@@ -78,33 +78,30 @@ Other resources:
 * https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
 * https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
 * https://medium.com/geekculture/create-docker-images-without-docker-daemon-kaniko-847a688155a6
-
-KO
-
 * https://snyk.io/blog/container-images-simplified-with-google-ko/
 
 Creating a new SpringBoot application: https://start.spring.io/
 
 ## Part 2 - Docker image security
 
-### Scanning Dockerfiles for security vulnerabilities
+**Scanning Dockerfiles for security vulnerabilities**
 
 * Trivy: https://github.com/aquasecurity/trivy
 * Semgrep: https://semgrep.dev/docs/
 
-### Scanning Docker images for security vulnerabilities
+**Scanning Docker images for security vulnerabilities**
 
 * Trivy
 * Grype: https://github.com/anchore/grype
 * SARIF format: https://sarifweb.azurewebsites.net/
 
-### Generating SBOMs from Docker images
+**Generating SBOMs from Docker images**
 
 * Trivy
 * Syft: https://github.com/anchore/syft
   * Syft and Grype: https://medium.com/rahasak/container-vulnerability-scan-with-syft-and-grype-f4ec9cd4d7f1
 
-### Generating CycloneDX and SPDX SBOMs from code
+**Generating CycloneDX and SPDX SBOMs from code**
 
 * CycloneDX
   https://github.com/CycloneDX/cyclonedx-python
@@ -113,7 +110,8 @@ Creating a new SpringBoot application: https://start.spring.io/
   * https://security.googleblog.com/2022/06/sbom-in-action-finding-vulnerabilities.html
   * https://github.com/spdx/spdx-to-osv/
 
-More SBOM resources
+**More SBOM resources**
+
 * https://sysdig.com/blog/sbom-101-software-bill-of-materials
 * https://mergebase.com/blog/best-tools-for-generating-sbom/
 * https://github.com/opensbom-generator/spdx-sbom-generator
@@ -124,18 +122,35 @@ More SBOM resources
 
 ### Signing Docker images and verifying signatures
 
+**Sigstore tools**
+
 * Cosign: https://github.com/sigstore/cosign
 * Keyless signing with GitHub Actions: https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
 * Python sigstore module: https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
 
-### Attesting artifacts
+**Attesting artifacts**
 
 * in-toto: https://in-toto.io/
   * https://github.com/in-toto/attestation
 * https://anchore.com/sbom/creating-sbom-attestations-using-syft-and-sigstore/
 * OCI as attestations storage for your packages: https://nextjs.marcofranssen.nl/oci-as-attestations-storage-for-your-packages
 
-### Safeguarding artifact integrity (SLSA)
+**Chainguard ecosystem**
+
+* Wolfi: https://github.com/wolfi-dev/os
+* Apko: https://github.com/chainguard-dev/apko
+* Melange: https://github.com/chainguard-dev/melange
+
+## Part 3 - GitHub Actions Workflows for Docker image creation and publishing
+
+**GitHub Actions Reusable Workflows**
+
+* Reusable workflows and reusable actions
+* Types of triggers (branch, tag, release)
+* https://docs.github.com/en/actions/using-workflows/reusing-workflows
+* https://betterprogramming.pub/how-to-use-github-actions-reusable-workflow-8604e8cbf258
+
+**Safeguarding artifact integrity (SLSA)**
 
 * SLSA: https://slsa.dev/
 * SLSA guide: https://fossa.com/blog/practical-guide-slsa-framework/
@@ -146,25 +161,7 @@ More SBOM resources
 * https://slsa.dev/blog/2022/08/slsa-github-workflows-generic-ga
 * https://slsa.dev/blog/2022/05/slsa-sbom
 
-Other resources:
-* Microsoft's Open Source Software (OSS) Secure Supply Chain (SSC) Framework: https://github.com/microsoft/oss-ssc-framework
-
-### Chainguard ecosystem
-
-* Wolfi: https://github.com/wolfi-dev/os
-* Apko: https://github.com/chainguard-dev/apko
-* Melange: https://github.com/chainguard-dev/melange
-
-## Part 3 - GitHub Actions Workflows for Docker image creation and publishing
-
-### GitHub Actions Reusable Workflows
-
-* Reusable workflows and reusable actions
-* Types of triggers (branch, tag, release)
-* https://docs.github.com/en/actions/using-workflows/reusing-workflows
-* https://betterprogramming.pub/how-to-use-github-actions-reusable-workflow-8604e8cbf258
-
-### GitHub Actions and SLSA
+**GitHub Actions and SLSA**
 
 * Generation of SLSA3+ provenance for native GitHub projects: https://github.com/slsa-framework/slsa-github-generator
 * https://security.googleblog.com/2022/04/improving-software-supply-chain.html
@@ -174,6 +171,7 @@ Other resources:
 
 ## Extra material
 
+* Microsoft's Open Source Software (OSS) Secure Supply Chain (SSC) Framework: https://github.com/microsoft/oss-ssc-framework
 * Running Dependency Track for inspecting SBOMs: https://dependencytrack.org/
 * https://medium.com/geekculture/oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Running local Kubernetes clusters with kind: https://kind.sigs.k8s.io/
