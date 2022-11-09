@@ -40,10 +40,12 @@ Docker image build mechanisms:
 * Cloud Native Buildpacks: https://buildpacks.io/
   * https://paketo.io/
   * https://paketo.io/docs/howto/java/
-* Nerdctl: https://github.com/containerd/nerdctl
+* Containerd/nerdctl: https://github.com/containerd/nerdctl
   * https://medium.com/nttlabs/nerdctl-359311b32d0e
+  * https://earthly.dev/blog/containerd-vs-docker/
 * Podman https://github.com/containers/podman
   * Buildah: https://github.com/containers/buildah
+  * https://www.redhat.com/en/topics/containers/what-is-podman
   * https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics
   * https://podman.io/blogs/2018/10/31/podman-buildah-relationship.html
 * Jib: https://github.com/GoogleContainerTools/jib
@@ -133,6 +135,9 @@ More SBOM resources
 * SLSA verifier: https://github.com/slsa-framework/slsa-verifier
 * Google Distroless achieves SLSA level 2: https://www.infoq.com/news/2022/10/distroless-slsa-level-two/
 * VEX: https://cloud.google.com/blog/products/identity-security/how-vex-helps-sbomslsa-improve-supply-chain-visibility
+* SLSA and GUAC: https://github.com/guacsec/guac
+* https://slsa.dev/blog/2022/08/slsa-github-workflows-generic-ga
+* https://slsa.dev/blog/2022/05/slsa-sbom
 
 Other resources:
 * Microsoft's Open Source Software (OSS) Secure Supply Chain (SSC) Framework: https://github.com/microsoft/oss-ssc-framework
