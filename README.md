@@ -66,11 +66,14 @@ Other resources:
 * https://github.com/iximiuz/awesome-container-tinkering
 * https://github.com/iximiuz/cdebug
 
+* Earthly https://earthly.dev
+* https://earthly.dev/blog/chroot/
 * http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
 * https://lwn.net/Articles/902049/
 * https://www.tutorialworks.com/difference-docker-containerd-runc-crio-oci/
 * https://containers.gitbook.io/build-containers-the-hard-way/
 * https://iximiuz.com/en/posts/docker-debug-slim-containers/
+* https://blog.kubesimplify.com/the-secret-gems-behind-building-container-images-enter-buildkit-and-docker-buildx
 * https://ashishtechmill.com/comparing-modern-day-container-image-builders-jib-buildpacks-and-docker
 * https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
 * https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
@@ -111,6 +114,7 @@ Creating a new SpringBoot application: https://start.spring.io/
   * https://github.com/spdx/spdx-to-osv/
 
 More SBOM resources
+* https://sysdig.com/blog/sbom-101-software-bill-of-materials
 * https://mergebase.com/blog/best-tools-for-generating-sbom/
 * https://github.com/opensbom-generator/spdx-sbom-generator
 * https://pedrodelgallego.github.io/blog/engineering/capabilities/security/software-bill-of-materials-devsecops/
@@ -122,6 +126,7 @@ More SBOM resources
 
 * Cosign: https://github.com/sigstore/cosign
 * Keyless signing with GitHub Actions: https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
+* Python sigstore module: https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
 
 ### Attesting artifacts
 
