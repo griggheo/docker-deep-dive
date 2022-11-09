@@ -116,6 +116,8 @@ More SBOM resources
 * https://github.com/opensbom-generator/spdx-sbom-generator
 * https://pedrodelgallego.github.io/blog/engineering/capabilities/security/software-bill-of-materials-devsecops/
 * https://github.com/devops-kung-fu/bomber
+* https://github.com/IBM/sbom-utility
+* https://paketo.io/docs/howto/sbom/#access-the-software-bill-of-materials-on-a-sample-application
 
 ### Signing Docker images and verifying signatures
 
