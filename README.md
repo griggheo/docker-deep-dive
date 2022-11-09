@@ -170,11 +170,11 @@ Other resources:
 ## Extra material
 
 * Running Dependency Track for inspecting SBOMs: https://dependencytrack.org/
-  * https://medium.com/geekculture/oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
+* https://medium.com/geekculture/oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Running local Kubernetes clusters with kind: https://kind.sigs.k8s.io/
 * Running a local Docker registry in kind: https://kind.sigs.k8s.io/docs/user/private-registries/
 oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Kyverno policies for allowing only signed images to run in kind: https://kyverno.io/docs/writing-policies/verify-images/
 * https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
 * kbld: https://carvel.dev/kbld/
-  * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
+* https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
