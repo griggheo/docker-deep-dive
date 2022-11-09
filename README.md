@@ -1,5 +1,4 @@
-# docker-deep-dive
-Deep Dive into Docker Containers and DevSecOps pipelines
+# Deep Dive into Docker Containers and DevSecOps pipelines
 
 ## Part 1 - Building and interacting with Docker images
 
