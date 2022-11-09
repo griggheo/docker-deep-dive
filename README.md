@@ -121,6 +121,7 @@ More SBOM resources
 ### Signing Docker images and verifying signatures
 
 * Cosign: https://github.com/sigstore/cosign
+* Keyless signing with GitHub Actions: https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
 
 ### Attesting artifacts
 
