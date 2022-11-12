@@ -187,3 +187,4 @@ oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499
 * https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
 * Carvel suite of tools: https://carvel.dev/
 * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
+* Build reproducibility: https://buildpacks.io/docs/features/reproducibility/
