@@ -9,7 +9,7 @@
 
 **Building curated Docker images**
 
-* https://github.com/codepraxis-io/docker-deep-dive/tree/main/taskfiles/build-curated-docker-images
+* https://github.com/codepraxis-io/curated-docker-images
 * https://github.com/orgs/codepraxis-io/packages/container/package/ubuntu22.04
 * https://github.com/orgs/codepraxis-io/packages/container/package/alpine3.16
 
