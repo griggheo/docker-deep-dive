@@ -7,7 +7,7 @@ includes:
 
 dotenv: ['.env', '.secrets', '../.env', '../.secrets']
 env:
-  APP_VERSION: 2.0.0
+  APP_VERSION: 3.0.0 # needs to be the same as in gradle.properties
   BUILD_DIR: build/libs
   BUILD_SCRIPT: .github/scripts/build-app.sh
   GH_REPO: spring-music
@@ -47,8 +47,8 @@ tasks:
         vars:
           DOCKER_BUILD_IMAGE: "alpine3.16:openjdk17"
           DOCKER_IMAGE_SCANNER: "grype"
-          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-curated-alpine3.16-openjdk17"
-          DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjdk17"
+          DOCKER_IMAGE_TAG: "{{.APP_VERSION}}-curated-alpine3.16-openjre17"
+          DOCKERFILE_NAME: "Dockerfile.curated-alpine3.16-openjre17"
       - defer:
         task: common:cleanup-workdir
 
