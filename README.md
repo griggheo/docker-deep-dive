@@ -129,9 +129,12 @@ Creating a new SpringBoot application: https://start.spring.io/
 **Sigstore tools**
 
 * Cosign: https://github.com/sigstore/cosign
-* Keyless signing with GitHub Actions: https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
-* https://github.com/codepraxis-io/keyless-cosign
-* Python sigstore module: https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
+* Keyless signing with GitHub Actions:
+ * https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
+ * https://github.com/codepraxis-io/keyless-cosign
+* Python sigstore module: 
+ * https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
+ * https://github.com/sigstore/sigstore-python
 
 **Attesting artifacts**
 
@@ -188,3 +191,6 @@ oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499
 * Carvel suite of tools: https://carvel.dev/
 * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
 * Build reproducibility: https://buildpacks.io/docs/features/reproducibility/
+* Go releaser supply chain example: https://github.com/goreleaser/supply-chain-example
+* CNI: https://medium.com/geekculture/k8s-network-cni-introduction-b035d42ad68f
+* DevSecOps with GitHub security: https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/articles/devsecops-in-github
