@@ -184,5 +184,5 @@ Creating a new SpringBoot application: https://start.spring.io/
 oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Kyverno policies for allowing only signed images to run in kind: https://kyverno.io/docs/writing-policies/verify-images/
 * https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
-* kbld: https://carvel.dev/kbld/
+* Carvel suite of tools: https://carvel.dev/
 * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
