@@ -53,6 +53,7 @@ Python Flask app:
 * Jib: https://github.com/GoogleContainerTools/jib
   * https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md
   * https://snyk.io/blog/building-java-container-images-using-jib/
+  * Sample app built with Jib: https://github.com/codepraxis-io/springboot-helloworld
 
 
 **Inspecting and manipulating Docker images**
