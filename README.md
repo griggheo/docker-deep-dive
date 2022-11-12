@@ -19,12 +19,15 @@
 
 **Dockerfiles**
 
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.amazoncorretto-17-alpine3-15
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.eclipse-temurin-17-jre-jammy
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.distroless-java17-debian11
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.distroless-java17-debian11-multistage
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.distroless-java11-debian11-multistage
-* https://github.com/codepraxis-io/spring-music/blob/master/Dockerfile.curated-alpine3.16-openjdk17
+Java SpringBoot / Gradle app:
+* https://github.com/codepraxis-io/spring-music
+
+Java SpringBoot / Maven app:
+* https://github.com/codepraxis-io/dddive-springboot
+
+Python Flask app:
+* https://github.com/codepraxis-io/flask-bootstrap
+
 
 **Docker images available to use as base images**
 
@@ -126,6 +129,7 @@ Creating a new SpringBoot application: https://start.spring.io/
 
 * Cosign: https://github.com/sigstore/cosign
 * Keyless signing with GitHub Actions: https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
+* https://github.com/codepraxis-io/keyless-cosign
 * Python sigstore module: https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
 
 **Attesting artifacts**
@@ -168,6 +172,7 @@ Creating a new SpringBoot application: https://start.spring.io/
 * https://github.com/slsa-framework/github-actions-demo
 * https://marcofranssen.nl/secure-your-software-supply-chain-using-sigstore-and-github-actions
 * https://github.com/philips-labs/slsa-provenance-action
+* Example of using SLSA GitHub Action Workflows: https://github.com/codepraxis-io/katana
 
 ## Extra material
 
@@ -179,5 +184,5 @@ Creating a new SpringBoot application: https://start.spring.io/
 oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Kyverno policies for allowing only signed images to run in kind: https://kyverno.io/docs/writing-policies/verify-images/
 * https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
-* kbld: https://carvel.dev/kbld/
+* Carvel suite of tools: https://carvel.dev/
 * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
