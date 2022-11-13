@@ -2,7 +2,7 @@
 
 # Credit: https://iximiuz.com/en/posts/docker-debug-slim-containers/
 
-IMAGE=spring-music:2.0.0-distroless-java17-debian11
+IMAGE=ghcr.io/codepraxis-io/spring-music:3.0.0-distroless-java17-debian11
 
 docker run --rm -d --name spring-music $IMAGE 
 sleep 7
