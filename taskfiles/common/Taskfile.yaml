@@ -219,7 +219,7 @@ tasks:
     cmds:
       - |
         CUSTOM_SCAN_RESULT_DIR={{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}
-        for scan_result_file in $(ls $CUSTOM_SCAN_RESULT_DIR); do
+        for scan_result_file in $(ls $CUSTOM_SCAN_RESULT_DIR | grep -v attestation); do
           echo Attaching attestation $scan_result_file to {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
           COSIGN_PASSWORD=$(cat {{.HOME}}/.k) cosign attest --predicate $CUSTOM_SCAN_RESULT_DIR/$scan_result_file --key {{.COSIGN_PRIVATE_KEY}} {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
         done
