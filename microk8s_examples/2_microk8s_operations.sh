@@ -1,3 +1,3 @@
 #!/bin/bash
 
-microk8s kubectl get all --all-namespaces
+sudo microk8s kubectl get all --all-namespaces
