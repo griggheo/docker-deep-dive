@@ -52,7 +52,7 @@ metadata:
   name: example-ingress
 spec:
   rules:
-    - host: dockerdeepdive.devsecops.gg
+    - host: ddd.devsecops.gg
       http:
         paths:
         - pathType: Prefix
