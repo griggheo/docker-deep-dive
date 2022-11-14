@@ -21,4 +21,4 @@ docker run --rm -it \
 # ip addr
 # ls -la /proc/1/root/ (this is the original container's filesystem)
 
-docker kill spring-music
+#docker kill spring-music
