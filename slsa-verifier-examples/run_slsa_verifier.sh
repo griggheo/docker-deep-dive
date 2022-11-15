@@ -1,7 +1,8 @@
 #!/bin/bash
 
 SOURCE_URI=github.com/codepraxis-io/katana
-SOURCE_TAG=v1.0.0
+#SOURCE_TAG=v1.0.0
+SOURCE_TAG=v1.0.1
 ARTIFACT_FILE=katana-linux-amd64
 INTOTO_ATTESTATION=katana-linux-amd64.intoto.jsonl
 
