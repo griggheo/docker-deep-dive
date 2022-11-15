@@ -1,6 +1,5 @@
 import "time"
 
-//before: time.Parse(time.RFC3339, "2022-10-23T01:36:02Z")
 after: time.Parse(time.RFC3339, "2022-11-01T00:00:00Z")
 
 // The predicateType field must match this string
@@ -8,7 +7,7 @@ predicateType: "cosign.sigstore.dev/attestation/v1"
 
 // The predicate must match the following constraints.
 predicate: {
-    Timestamp: <=before
+    Timestamp: >=after
     Data: "test1\n"
 }
 
