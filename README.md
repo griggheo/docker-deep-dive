@@ -68,6 +68,7 @@ Python Flask app:
 **Other resources**
 
 * https://github.com/iximiuz/awesome-container-tinkering
+* https://iximiuz.com/en/series/debunking-container-myths/
 * https://github.com/iximiuz/cdebug
 
 * Earthly https://earthly.dev
@@ -133,8 +134,10 @@ Creating a new SpringBoot application: https://start.spring.io/
  * https://www.chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions
  * https://github.com/codepraxis-io/keyless-cosign
 * Python sigstore module: 
- * https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
  * https://github.com/sigstore/sigstore-python
+ * https://www.python.org/download/sigstore/
+* https://blog.trailofbits.com/2022/11/08/sigstore-code-signing-verification-software-supply-chain/
+ 
 
 **Attesting artifacts**
 
