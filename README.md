@@ -74,6 +74,7 @@ Python Flask app:
 * Earthly https://earthly.dev
 * https://earthly.dev/blog/chroot/
 * http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
+* https://jpetazzo.github.io/2020/02/01/quest-minimal-docker-images-part-1/
 * https://lwn.net/Articles/902049/
 * https://www.tutorialworks.com/difference-docker-containerd-runc-crio-oci/
 * https://containers.gitbook.io/build-containers-the-hard-way/
