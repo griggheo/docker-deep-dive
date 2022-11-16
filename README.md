@@ -105,6 +105,12 @@ Kubernetes-in-a-box
 
 ## Part 2 - Docker image security
 
+**Vulnerability databases**
+
+* "Common Vulnerabilities and Exposures" aka CVE: https://cve.mitre.org/cve/search_cve_list.html
+* "National Vulnerability Database" aka NVD: https://nvd.nist.gov/
+* https://osv.dev/
+
 **Scanning Dockerfiles for security vulnerabilities**
 
 * Trivy: https://github.com/aquasecurity/trivy
