@@ -93,12 +93,14 @@ Go ecosystem:
 
 * Ko: https://github.com/ko-build/ko 
   * https://snyk.io/blog/container-images-simplified-with-google-ko/
-* go-releaser: https://github.com/goreleaser/goreleaser
+* goreleaser: https://github.com/goreleaser/goreleaser
+  * goreleaser supply chain example: https://github.com/goreleaser/supply-chain-example
 * podinfo: https://github.com/stefanprodan/podinfo
 
 Kubernetes-in-a-box
 
 * KIND: https://kind.sigs.k8s.io/
+  * Running a local Docker registry in kind: https://kind.sigs.k8s.io/docs/user/private-registries/
 * microk8s: https://microk8s.io/
 
 ## Part 2 - Docker image security
@@ -199,15 +201,10 @@ Kubernetes-in-a-box
 
 * Microsoft's Open Source Software (OSS) Secure Supply Chain (SSC) Framework: https://github.com/microsoft/oss-ssc-framework
 * Running Dependency Track for inspecting SBOMs: https://dependencytrack.org/
-* https://medium.com/geekculture/oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
-* Running local Kubernetes clusters with kind: https://kind.sigs.k8s.io/
-* Running a local Docker registry in kind: https://kind.sigs.k8s.io/docs/user/private-registries/
-oss-vulnerability-detection-from-sbom-with-ci-cd-for-js-applications-4edcdfba499d
 * Kyverno policies for allowing only signed images to run in kind: https://kyverno.io/docs/writing-policies/verify-images/
-* https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
+  * https://nirmata.com/2022/09/29/how-to-migrate-from-kubernetes-pod-security-policies-to-kyverno/
 * Carvel suite of tools: https://carvel.dev/
-* https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
 * Build reproducibility: https://buildpacks.io/docs/features/reproducibility/
-* Go releaser supply chain example: https://github.com/goreleaser/supply-chain-example
+  * https://medium.com/@michael.vittrup.larsen/why-we-should-use-latest-tag-on-container-images-fc0266877ab5
 * CNI: https://medium.com/geekculture/k8s-network-cni-introduction-b035d42ad68f
 * DevSecOps with GitHub security: https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/articles/devsecops-in-github
