@@ -72,7 +72,8 @@ Python Flask app:
 * https://github.com/iximiuz/cdebug
 
 * Earthly https://earthly.dev
-* https://earthly.dev/blog/chroot/
+  * https://earthly.dev/blog/chroot/
+
 * http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
 * https://jpetazzo.github.io/2020/02/01/quest-minimal-docker-images-part-1/
 * https://lwn.net/Articles/902049/
@@ -84,9 +85,21 @@ Python Flask app:
 * https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
 * https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
 * https://medium.com/geekculture/create-docker-images-without-docker-daemon-kaniko-847a688155a6
-* https://snyk.io/blog/container-images-simplified-with-google-ko/
+
 
 Creating a new SpringBoot application: https://start.spring.io/
+
+Go ecosystem:
+
+* Ko: https://github.com/ko-build/ko 
+  * https://snyk.io/blog/container-images-simplified-with-google-ko/
+* go-releaser: https://github.com/goreleaser/goreleaser
+* podinfo: https://github.com/stefanprodan/podinfo
+
+Kubernetes-in-a-box
+
+* KIND: https://kind.sigs.k8s.io/
+* microk8s: https://microk8s.io/
 
 ## Part 2 - Docker image security
 
