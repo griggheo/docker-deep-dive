@@ -1,6 +1,9 @@
 #!/bin/bash
 
-REPORT=$1
+SBOM=trivy_sbom_spdx.json
+REPORT=trivy_sbom_scan_report.json
+
+trivy sbom $SBOM -f json -o $REPORT
 
 echo Vulnerabilities
 cat $REPORT | jq '.Results[0].Vulnerabilities[]'
