@@ -16,9 +16,10 @@ debug-nonroot'
 
 for IMAGE in $GOOGLE_DISTROLESS_IMAGES; do
 	for TAG in $TAGS; do
+		docker pull $IMAGE:$TAG
 		echo Verifying $IMAGE:$TAG
 		cosign verify --key $GOOGLE_COSIGN_PUB_KEY $IMAGE:$TAG
-		/usr/local/bin/cosign-1.13.1 verify --key $GOOGLE_COSIGN_PUB_KEY $IMAGE:$TAG
+		#/usr/local/bin/cosign-1.13.1 verify --key $GOOGLE_COSIGN_PUB_KEY $IMAGE:$TAG
 		echo
 	done
 done
