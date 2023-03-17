@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hello-server
+  name: hello-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: hello-server
+    spec:
+      containers:
+      - image: 127.0.0.1:32000/hello-app:2.0
+        imagePullPolicy: IfNotPresent
+        name: hello-app
+        resources: {}

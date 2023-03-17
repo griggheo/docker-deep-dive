@@ -1,11 +1,9 @@
 #!/bin/bash
 
-#JIB_IMAGE_TAR=../taskfiles/build-java-maven-sample-springboot/workspace-eNPXc6F2vu/sourcecode/dddive-springboot/target/jib-image.tar
-#JIB_IMAGE_TAR=../taskfiles/build-java-maven-sample-springboot/workspace-peuE93yqHm/sourcecode/dddive-springboot/target/jib-image.tar
-JIB_IMAGE_TAR=../taskfiles/build-jib-springboot-helloworld/workspace-v7ukjXgyqH/sourcecode/springboot-helloworld/target/jib-image.tar
+JIB_IMAGE_TAR=../taskfiles/build-jib-springboot-helloworld/workspace-QatQ6HRcFZ/sourcecode/springboot-helloworld/target/jib-image.tar
 LOCAL_REGISTRY=127.0.0.1:32000
 IMAGE=springboot-helloworld
-IMAGE_TAG=0.0.1-jib-nerdctl
+IMAGE_TAG=0.0.2-jib-nerdctl
 
 echo Running: crane push $JIB_IMAGE_TAR ${LOCAL_REGISTRY}/$IMAGE:$IMAGE_TAG
 crane push $JIB_IMAGE_TAR ${LOCAL_REGISTRY}/$IMAGE:$IMAGE_TAG
