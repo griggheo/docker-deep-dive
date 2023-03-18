@@ -173,12 +173,12 @@ tasks:
           ARGS="-o json --file $CUSTOM_SCAN_RESULT_DIR/syft-sbom.json packages {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
           echo Running: syft $ARGS
           syft $ARGS
-          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
-            # Also create cosign attestation in one go
-            ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
-            echo Running: syft attest $ARGS
-            COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > {{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}/syft-sbom-att.json
-          fi
+          #          if [ "{{.DOCKER_BUILD_TYPE}}" == "docker" ] || [ "{{.DOCKER_BUILD_TYPE}}" == "nerdctl" ]; then
+          #  # Also create cosign attestation in one go
+          #  ARGS="-o json {{.DOCKER_REGISTRY}}/{{.GH_ORG}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}"
+          #  echo Running: syft attest $ARGS
+          #  COSIGN_PASSWORD=$(cat {{.HOME}}/.k) syft attest --key {{.COSIGN_PRIVATE_KEY}} $ARGS > {{.SCAN_RESULT_DIR}}/{{.DOCKER_IMAGE_NAME}}-{{.DOCKER_IMAGE_TAG}}/syft-sbom-att.json
+          #fi
         fi
 
   scan-dockerfile:
@@ -188,8 +188,12 @@ tasks:
         if [ "{{.DOCKERFILE_SCANNER}}" == "semgrep" ]; then
           echo Running: semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json
           semgrep --config=auto {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} --json | tee -a $CUSTOM_SCAN_RESULT_DIR/semgrep-dockerfile.json
-        else
-        #if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
+        fi
+        if [ "{{.DOCKERFILE_SCANNER}}" == "hadolint" ]; then
+          echo Running: hadolint -f sarif {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}
+          hadolint -f sarif {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}} | tee -a $CUSTOM_SCAN_RESULT_DIR/hadolint-dockerfile.sarif
+        fi
+        if [ "{{.DOCKERFILE_SCANNER}}" == "trivy" ]; then
           ARGS="-f json -o $CUSTOM_SCAN_RESULT_DIR/trivy-dockerfile.json {{.DOCKER_DIR}}/{{.DOCKERFILE_NAME}}"
           echo Running: trivy config $ARGS
           trivy config $ARGS
