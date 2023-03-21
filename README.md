@@ -15,7 +15,7 @@
 
 **Building a Java SpringBoot app and creating Docker images based on various base images**
 
-* https://github.com/codepraxis-io/docker-deep-dive/blob/main/taskfiles/build-app-java/Taskfile.yaml
+* https://github.com/codepraxis-io/docker-deep-dive/blob/main/taskfiles/build-java-gradle-spring-music/Taskfile.yaml
 
 **Dockerfiles**
 
