@@ -23,7 +23,7 @@ crane blob localhost:5001/hello-app@sha256:59bf1c3509f33515622619af21ed55bbe26d2
 echo Running: crane validate --remote localhost:5001/hello-app:$tag
 crane validate --remote localhost:5001/hello-app:$tag
 
-newtag=1.1
+newtag=1.2
 echo Running: crane tag localhost:5001/hello-app:$tag $newtag
 crane tag localhost:5001/hello-app:$tag $newtag
 
