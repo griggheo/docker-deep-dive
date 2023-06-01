@@ -175,7 +175,7 @@ Kubernetes-in-a-box
 * Apko: https://github.com/chainguard-dev/apko
 * Melange: https://github.com/chainguard-dev/melange
 
-## Part 3 - GitHub Actions Workflows for Docker image creation and publishing
+## Part 4 - GitHub Actions Workflows and SLSA
 
 **GitHub Actions Reusable Workflows**
 
