@@ -1,6 +1,29 @@
 # Deep Dive into Docker Containers and DevSecOps pipelines
 
-## Part 1 - Building and interacting with Docker images
+## Part 1: Anatomy of a Docker image
+
+**Inspecting and manipulating Docker images**
+
+* Dive: https://github.com/wagoodman/dive
+* Crane: https://github.com/google/go-containerregistry/tree/main/cmd/crane
+* ORAS: https://github.com/oras-project/oras
+* Skopeo: https://github.com/containers/skopeo
+
+Articles:
+
+* https://github.com/iximiuz/awesome-container-tinkering
+* https://iximiuz.com/en/series/debunking-container-myths/
+* https://lwn.net/Articles/902049/
+* https://www.tutorialworks.com/difference-docker-containerd-runc-crio-oci/
+* https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
+* https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
+* https://containers.gitbook.io/build-containers-the-hard-way/
+* http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
+* https://iximiuz.com/en/posts/docker-debug-slim-containers/
+
+* DockerHub OCI Artifact support: https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/
+
+## Part 2: Various methods for building Docker images
 
 **Using Taskfiles for local pipelines**
 
@@ -55,35 +78,13 @@ Python Flask app:
   * https://snyk.io/blog/building-java-container-images-using-jib/
   * Sample app built with Jib: https://github.com/codepraxis-io/springboot-helloworld
 
-
-**Inspecting and manipulating Docker images**
-
-* Dive: https://github.com/wagoodman/dive
-* Crane: https://github.com/google/go-containerregistry/tree/main/cmd/crane
-* ORAS: https://github.com/oras-project/oras
-* Skopeo: https://github.com/containers/skopeo
-
-* DockerHub OCI Artifact support: https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/
-
 **Other resources**
-
-* https://github.com/iximiuz/awesome-container-tinkering
-* https://iximiuz.com/en/series/debunking-container-myths/
-* https://github.com/iximiuz/cdebug
 
 * Earthly https://earthly.dev
   * https://earthly.dev/blog/chroot/
-
-* http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
 * https://jpetazzo.github.io/2020/02/01/quest-minimal-docker-images-part-1/
-* https://lwn.net/Articles/902049/
-* https://www.tutorialworks.com/difference-docker-containerd-runc-crio-oci/
-* https://containers.gitbook.io/build-containers-the-hard-way/
-* https://iximiuz.com/en/posts/docker-debug-slim-containers/
 * https://blog.kubesimplify.com/the-secret-gems-behind-building-container-images-enter-buildkit-and-docker-buildx
 * https://ashishtechmill.com/comparing-modern-day-container-image-builders-jib-buildpacks-and-docker
-* https://dlorenc.medium.com/oci-artifacts-explained-8f4a77945c13
-* https://itnext.io/reverse-engineer-docker-images-into-dockerfiles-453d3d21d896
 * https://medium.com/geekculture/create-docker-images-without-docker-daemon-kaniko-847a688155a6
 
 
@@ -103,33 +104,32 @@ Kubernetes-in-a-box
   * Running a local Docker registry in kind: https://kind.sigs.k8s.io/docs/user/private-registries/
 * microk8s: https://microk8s.io/
 
-## Part 2 - Docker image security
+## Part 3 - Docker Supply Chain Security
 
 **Vulnerability databases**
-
 * "Common Vulnerabilities and Exposures" aka CVE: https://cve.mitre.org/cve/search_cve_list.html
 * "National Vulnerability Database" aka NVD: https://nvd.nist.gov/
+
+**Google Security ecosystem**
+* https://deps.dev/
+* https://security.googleblog.com/2023/04/announcing-depsdev-api-critical.html
 * https://osv.dev/
+* https://github.com/google/osv-scanner
 
 **Scanning Dockerfiles for security vulnerabilities**
-
-* Trivy: https://github.com/aquasecurity/trivy
+* Hadolint: https://github.com/hadolint/hadolint
 * Semgrep: https://semgrep.dev/docs/
 
 **Scanning Docker images for security vulnerabilities**
-
-* Trivy
+* Trivy: https://github.com/aquasecurity/trivy
 * Grype: https://github.com/anchore/grype
 * SARIF format: https://sarifweb.azurewebsites.net/
 
 **Generating SBOMs from Docker images**
-
-* Trivy
 * Syft: https://github.com/anchore/syft
-  * Syft and Grype: https://medium.com/rahasak/container-vulnerability-scan-with-syft-and-grype-f4ec9cd4d7f1
+* Syft and Grype: https://medium.com/rahasak/container-vulnerability-scan-with-syft-and-grype-f4ec9cd4d7f1
 
 **Generating CycloneDX and SPDX SBOMs from code**
-
 * CycloneDX
   https://github.com/CycloneDX/cyclonedx-python
 * SPDX
@@ -138,12 +138,13 @@ Kubernetes-in-a-box
   * https://github.com/spdx/spdx-to-osv/
 
 **More SBOM resources**
-
+* https://owasp.org/www-project-dependency-track/
+* https://cyclonedx.org/tool-center/
+* https://spdx.dev/tools-community/
 * https://sysdig.com/blog/sbom-101-software-bill-of-materials
 * https://mergebase.com/blog/best-tools-for-generating-sbom/
 * https://github.com/opensbom-generator/spdx-sbom-generator
 * https://pedrodelgallego.github.io/blog/engineering/capabilities/security/software-bill-of-materials-devsecops/
-* https://github.com/devops-kung-fu/bomber
 * https://github.com/IBM/sbom-utility
 * https://paketo.io/docs/howto/sbom/#access-the-software-bill-of-materials-on-a-sample-application
 
@@ -186,8 +187,12 @@ Kubernetes-in-a-box
 **Safeguarding artifact integrity (SLSA)**
 
 * SLSA: https://slsa.dev/
+* SLSA levels: https://slsa.dev/spec/v1.0/levels
 * SLSA guide: https://fossa.com/blog/practical-guide-slsa-framework/
+* SLSA GitHub generator: https://github.com/slsa-framework/slsa-github-generator
 * SLSA verifier: https://github.com/slsa-framework/slsa-verifier
+* SLSA and in-toto: http://slsa.dev/blog/2023/05/in-toto-and-slsa
+* SLSA and node.js: http://slsa.dev/blog/2023/05/bringing-improved-supply-chain-security-to-the-nodejs-ecosystem
 * Google Distroless achieves SLSA level 2: https://www.infoq.com/news/2022/10/distroless-slsa-level-two/
 * VEX: https://cloud.google.com/blog/products/identity-security/how-vex-helps-sbomslsa-improve-supply-chain-visibility
 * SLSA and GUAC: https://github.com/guacsec/guac
