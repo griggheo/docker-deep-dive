@@ -52,7 +52,7 @@ metadata:
   name: example-ingress
 spec:
   rules:
-    - host: ddd.devsecops.gg
+    - host: cicd.codepraxis.dev
       http:
         paths:
         - pathType: Prefix
