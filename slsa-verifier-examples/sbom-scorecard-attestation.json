@@ -1,0 +1,295 @@
+{
+  "_type": "https://in-toto.io/Statement/v0.1",
+  "predicateType": "https://slsa.dev/provenance/v0.2",
+  "subject": [
+    {
+      "name": "sbom-scorecard-linux-amd64",
+      "digest": {
+        "sha256": "648c4de39e9eb7a113ac0443f1f52e914c2b77546aae20ff9d95ffd180c22b7f"
+      }
+    }
+  ],
+  "predicate": {
+    "builder": {
+      "id": "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@refs/tags/v1.2.2"
+    },
+    "buildType": "https://github.com/slsa-framework/slsa-github-generator/go@v1",
+    "invocation": {
+      "configSource": {
+        "uri": "git+https://github.com/eBay/sbom-scorecard@refs/tags/0.0.5",
+        "digest": {
+          "sha1": "b324861a7e2c6d538143bd4f07bd05d2b70059df"
+        },
+        "entryPoint": ".github/workflows/go-ossf-slsa3-publish.yml"
+      },
+      "parameters": {},
+      "environment": {
+        "arch": "X64",
+        "github_actor": "justinabrahms",
+        "github_actor_id": "3853",
+        "github_base_ref": "",
+        "github_event_name": "release",
+        "github_event_payload": {
+          "action": "created",
+          "enterprise": {
+            "avatar_url": "https://avatars.githubusercontent.com/b/4208?v=4",
+            "created_at": "2020-09-25T23:27:27Z",
+            "description": "",
+            "html_url": "https://github.com/enterprises/ebay",
+            "id": 4208,
+            "name": "eBay",
+            "node_id": "MDEwOkVudGVycHJpc2U0MjA4",
+            "slug": "ebay",
+            "updated_at": "2022-05-13T19:04:05Z",
+            "website_url": ""
+          },
+          "organization": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/3639281?v=4",
+            "description": "",
+            "events_url": "https://api.github.com/orgs/eBay/events",
+            "hooks_url": "https://api.github.com/orgs/eBay/hooks",
+            "id": 3639281,
+            "issues_url": "https://api.github.com/orgs/eBay/issues",
+            "login": "eBay",
+            "members_url": "https://api.github.com/orgs/eBay/members{/member}",
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjM2MzkyODE=",
+            "public_members_url": "https://api.github.com/orgs/eBay/public_members{/member}",
+            "repos_url": "https://api.github.com/orgs/eBay/repos",
+            "url": "https://api.github.com/orgs/eBay"
+          },
+          "release": {
+            "assets": [],
+            "assets_url": "https://api.github.com/repos/eBay/sbom-scorecard/releases/89324699/assets",
+            "author": {
+              "avatar_url": "https://avatars.githubusercontent.com/u/3853?v=4",
+              "events_url": "https://api.github.com/users/justinabrahms/events{/privacy}",
+              "followers_url": "https://api.github.com/users/justinabrahms/followers",
+              "following_url": "https://api.github.com/users/justinabrahms/following{/other_user}",
+              "gists_url": "https://api.github.com/users/justinabrahms/gists{/gist_id}",
+              "gravatar_id": "",
+              "html_url": "https://github.com/justinabrahms",
+              "id": 3853,
+              "login": "justinabrahms",
+              "node_id": "MDQ6VXNlcjM4NTM=",
+              "organizations_url": "https://api.github.com/users/justinabrahms/orgs",
+              "received_events_url": "https://api.github.com/users/justinabrahms/received_events",
+              "repos_url": "https://api.github.com/users/justinabrahms/repos",
+              "site_admin": false,
+              "starred_url": "https://api.github.com/users/justinabrahms/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/justinabrahms/subscriptions",
+              "type": "User",
+              "url": "https://api.github.com/users/justinabrahms"
+            },
+            "body": "Bugfix & documentation release\r\n\r\n## What's Changed\r\n* (feat) Add SPDX 2.3 support by @puerco in https://github.com/eBay/sbom-scorecard/pull/13\r\n* (bug) Fix Package Version Logic for CDX Parsing by @jspeed-meyers in https://github.com/eBay/sbom-scorecard/pull/24\r\n* (bug) Fix integer division by integer bug by @jspeed-meyers in https://github.com/eBay/sbom-scorecard/pull/29\r\n* (chore) Minor tutorial updates by @jspeed-meyers in https://github.com/eBay/sbom-scorecard/pull/20\r\n* (chore) Inline tutorial into the README by @justinabrahms in https://github.com/eBay/sbom-scorecard/pull/23\r\n* (chore) Add usage image by @justinabrahms in https://github.com/eBay/sbom-scorecard/pull/30\r\n\r\n**Full Changelog**: https://github.com/eBay/sbom-scorecard/compare/0.0.4...0.0.5",
+            "created_at": "2023-01-17T23:34:38Z",
+            "draft": false,
+            "html_url": "https://github.com/eBay/sbom-scorecard/releases/tag/0.0.5",
+            "id": 89324699,
+            "mentions_count": 3,
+            "name": "0.0.5",
+            "node_id": "RE_kwDOIXhkFM4FUvyb",
+            "prerelease": false,
+            "published_at": "2023-01-17T23:36:26Z",
+            "tag_name": "0.0.5",
+            "tarball_url": "https://api.github.com/repos/eBay/sbom-scorecard/tarball/0.0.5",
+            "target_commitish": "main",
+            "upload_url": "https://uploads.github.com/repos/eBay/sbom-scorecard/releases/89324699/assets{?name,label}",
+            "url": "https://api.github.com/repos/eBay/sbom-scorecard/releases/89324699",
+            "zipball_url": "https://api.github.com/repos/eBay/sbom-scorecard/zipball/0.0.5"
+          },
+          "repository": {
+            "allow_forking": true,
+            "archive_url": "https://api.github.com/repos/eBay/sbom-scorecard/{archive_format}{/ref}",
+            "archived": false,
+            "assignees_url": "https://api.github.com/repos/eBay/sbom-scorecard/assignees{/user}",
+            "blobs_url": "https://api.github.com/repos/eBay/sbom-scorecard/git/blobs{/sha}",
+            "branches_url": "https://api.github.com/repos/eBay/sbom-scorecard/branches{/branch}",
+            "clone_url": "https://github.com/eBay/sbom-scorecard.git",
+            "collaborators_url": "https://api.github.com/repos/eBay/sbom-scorecard/collaborators{/collaborator}",
+            "comments_url": "https://api.github.com/repos/eBay/sbom-scorecard/comments{/number}",
+            "commits_url": "https://api.github.com/repos/eBay/sbom-scorecard/commits{/sha}",
+            "compare_url": "https://api.github.com/repos/eBay/sbom-scorecard/compare/{base}...{head}",
+            "contents_url": "https://api.github.com/repos/eBay/sbom-scorecard/contents/{+path}",
+            "contributors_url": "https://api.github.com/repos/eBay/sbom-scorecard/contributors",
+            "created_at": "2022-11-03T22:58:57Z",
+            "default_branch": "main",
+            "deployments_url": "https://api.github.com/repos/eBay/sbom-scorecard/deployments",
+            "description": "Generate a score for your sbom to understand if it will actually be useful.",
+            "disabled": false,
+            "downloads_url": "https://api.github.com/repos/eBay/sbom-scorecard/downloads",
+            "events_url": "https://api.github.com/repos/eBay/sbom-scorecard/events",
+            "fork": false,
+            "forks": 3,
+            "forks_count": 3,
+            "forks_url": "https://api.github.com/repos/eBay/sbom-scorecard/forks",
+            "full_name": "eBay/sbom-scorecard",
+            "git_commits_url": "https://api.github.com/repos/eBay/sbom-scorecard/git/commits{/sha}",
+            "git_refs_url": "https://api.github.com/repos/eBay/sbom-scorecard/git/refs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/eBay/sbom-scorecard/git/tags{/sha}",
+            "git_url": "git://github.com/eBay/sbom-scorecard.git",
+            "has_discussions": false,
+            "has_downloads": true,
+            "has_issues": true,
+            "has_pages": false,
+            "has_projects": true,
+            "has_wiki": true,
+            "homepage": "",
+            "hooks_url": "https://api.github.com/repos/eBay/sbom-scorecard/hooks",
+            "html_url": "https://github.com/eBay/sbom-scorecard",
+            "id": 561538068,
+            "is_template": false,
+            "issue_comment_url": "https://api.github.com/repos/eBay/sbom-scorecard/issues/comments{/number}",
+            "issue_events_url": "https://api.github.com/repos/eBay/sbom-scorecard/issues/events{/number}",
+            "issues_url": "https://api.github.com/repos/eBay/sbom-scorecard/issues{/number}",
+            "keys_url": "https://api.github.com/repos/eBay/sbom-scorecard/keys{/key_id}",
+            "labels_url": "https://api.github.com/repos/eBay/sbom-scorecard/labels{/name}",
+            "language": "Go",
+            "languages_url": "https://api.github.com/repos/eBay/sbom-scorecard/languages",
+            "license": {
+              "key": "apache-2.0",
+              "name": "Apache License 2.0",
+              "node_id": "MDc6TGljZW5zZTI=",
+              "spdx_id": "Apache-2.0",
+              "url": "https://api.github.com/licenses/apache-2.0"
+            },
+            "merges_url": "https://api.github.com/repos/eBay/sbom-scorecard/merges",
+            "milestones_url": "https://api.github.com/repos/eBay/sbom-scorecard/milestones{/number}",
+            "mirror_url": null,
+            "name": "sbom-scorecard",
+            "node_id": "R_kgDOIXhkFA",
+            "notifications_url": "https://api.github.com/repos/eBay/sbom-scorecard/notifications{?since,all,participating}",
+            "open_issues": 5,
+            "open_issues_count": 5,
+            "owner": {
+              "avatar_url": "https://avatars.githubusercontent.com/u/3639281?v=4",
+              "events_url": "https://api.github.com/users/eBay/events{/privacy}",
+              "followers_url": "https://api.github.com/users/eBay/followers",
+              "following_url": "https://api.github.com/users/eBay/following{/other_user}",
+              "gists_url": "https://api.github.com/users/eBay/gists{/gist_id}",
+              "gravatar_id": "",
+              "html_url": "https://github.com/eBay",
+              "id": 3639281,
+              "login": "eBay",
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjM2MzkyODE=",
+              "organizations_url": "https://api.github.com/users/eBay/orgs",
+              "received_events_url": "https://api.github.com/users/eBay/received_events",
+              "repos_url": "https://api.github.com/users/eBay/repos",
+              "site_admin": false,
+              "starred_url": "https://api.github.com/users/eBay/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/eBay/subscriptions",
+              "type": "Organization",
+              "url": "https://api.github.com/users/eBay"
+            },
+            "private": false,
+            "pulls_url": "https://api.github.com/repos/eBay/sbom-scorecard/pulls{/number}",
+            "pushed_at": "2023-01-17T23:36:26Z",
+            "releases_url": "https://api.github.com/repos/eBay/sbom-scorecard/releases{/id}",
+            "size": 237,
+            "ssh_url": "git@github.com:eBay/sbom-scorecard.git",
+            "stargazers_count": 44,
+            "stargazers_url": "https://api.github.com/repos/eBay/sbom-scorecard/stargazers",
+            "statuses_url": "https://api.github.com/repos/eBay/sbom-scorecard/statuses/{sha}",
+            "subscribers_url": "https://api.github.com/repos/eBay/sbom-scorecard/subscribers",
+            "subscription_url": "https://api.github.com/repos/eBay/sbom-scorecard/subscription",
+            "svn_url": "https://github.com/eBay/sbom-scorecard",
+            "tags_url": "https://api.github.com/repos/eBay/sbom-scorecard/tags",
+            "teams_url": "https://api.github.com/repos/eBay/sbom-scorecard/teams",
+            "topics": [],
+            "trees_url": "https://api.github.com/repos/eBay/sbom-scorecard/git/trees{/sha}",
+            "updated_at": "2023-01-13T00:14:22Z",
+            "url": "https://api.github.com/repos/eBay/sbom-scorecard",
+            "visibility": "public",
+            "watchers": 44,
+            "watchers_count": 44,
+            "web_commit_signoff_required": false
+          },
+          "sender": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/3853?v=4",
+            "events_url": "https://api.github.com/users/justinabrahms/events{/privacy}",
+            "followers_url": "https://api.github.com/users/justinabrahms/followers",
+            "following_url": "https://api.github.com/users/justinabrahms/following{/other_user}",
+            "gists_url": "https://api.github.com/users/justinabrahms/gists{/gist_id}",
+            "gravatar_id": "",
+            "html_url": "https://github.com/justinabrahms",
+            "id": 3853,
+            "login": "justinabrahms",
+            "node_id": "MDQ6VXNlcjM4NTM=",
+            "organizations_url": "https://api.github.com/users/justinabrahms/orgs",
+            "received_events_url": "https://api.github.com/users/justinabrahms/received_events",
+            "repos_url": "https://api.github.com/users/justinabrahms/repos",
+            "site_admin": false,
+            "starred_url": "https://api.github.com/users/justinabrahms/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/justinabrahms/subscriptions",
+            "type": "User",
+            "url": "https://api.github.com/users/justinabrahms"
+          }
+        },
+        "github_head_ref": "",
+        "github_ref": "refs/tags/0.0.5",
+        "github_ref_type": "tag",
+        "github_repository_id": "561538068",
+        "github_repository_owner": "eBay",
+        "github_repository_owner_id": "3639281",
+        "github_run_attempt": "1",
+        "github_run_id": "3944244311",
+        "github_run_number": "15",
+        "github_sha1": "b324861a7e2c6d538143bd4f07bd05d2b70059df",
+        "os": "ubuntu22"
+      }
+    },
+    "buildConfig": {
+      "version": 1,
+      "steps": [
+        {
+          "command": [
+            "/opt/hostedtoolcache/go/1.17.13/x64/bin/go",
+            "mod",
+            "vendor"
+          ],
+          "env": null,
+          "workingDir": "/home/runner/work/sbom-scorecard/sbom-scorecard/__PROJECT_CHECKOUT_DIR__"
+        },
+        {
+          "command": [
+            "/opt/hostedtoolcache/go/1.17.13/x64/bin/go",
+            "build",
+            "-mod=vendor",
+            "-trimpath",
+            "-tags=netgo",
+            "-ldflags=-X main.Version=.0.5 -X main.Commit=b324861a7e2c6d538143bd4f07bd05d2b70059df -X main.CommitDate=1673998478 -X main.TreeState=clean",
+            "-o",
+            "sbom-scorecard-linux-amd64",
+            "./cmd/sbom-scorecard/main.go"
+          ],
+          "env": [
+            "GOOS=linux",
+            "GOARCH=amd64",
+            "GO111MODULE=on",
+            "CGO_ENABLED=0"
+          ],
+          "workingDir": "/home/runner/work/sbom-scorecard/sbom-scorecard/__PROJECT_CHECKOUT_DIR__"
+        }
+      ]
+    },
+    "metadata": {
+      "buildInvocationID": "3944244311-1",
+      "completeness": {
+        "parameters": true,
+        "environment": false,
+        "materials": false
+      },
+      "reproducible": false
+    },
+    "materials": [
+      {
+        "uri": "git+https://github.com/eBay/sbom-scorecard@refs/tags/0.0.5",
+        "digest": {
+          "sha1": "b324861a7e2c6d538143bd4f07bd05d2b70059df"
+        }
+      },
+      {
+        "uri": "https://github.com/actions/virtual-environments/releases/tag/ubuntu22/20230109.1"
+      }
+    ]
+  }
+}
