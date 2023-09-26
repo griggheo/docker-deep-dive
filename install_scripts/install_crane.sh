@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CRANE_VERSION=0.12.0
+CRANE_VERSION=0.14.0
 
 mkdir -p /tmp/crane
 cd /tmp/crane 

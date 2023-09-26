@@ -40,6 +40,10 @@ echo Running: crane manifest $IMAGE:$TAG
 crane manifest $IMAGE:$TAG | jq -r '.' | tee crane-manifest-$IMAGE-$TAG.json
 
 echo
+echo Running: docker manifest inspect $IMAGE:$TAG
+docker manifest inspect $IMAGE:$TAG | jq -r '.' | tee docker-manifest-inspect-$IMAGE-$TAG.json
+
+echo
 echo docker save $IMAGE:$TAG 
 docker save $IMAGE:$TAG > docker-save-$IMAGE-$TAG.tar
 

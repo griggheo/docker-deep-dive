@@ -7,7 +7,7 @@ includes:
 
 dotenv: ['.env', '.secrets', '../.env', '../.secrets']
 env:
-  APP_VERSION: 4.0.0 # needs to be the same as in gradle.properties
+  APP_VERSION: 6.0.0 # needs to be the same as in gradle.properties
   BUILD_DIR: build/libs
   BUILD_SCRIPT: .github/scripts/build-app.sh
   GH_REPO: spring-music

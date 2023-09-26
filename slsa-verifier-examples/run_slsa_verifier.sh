@@ -2,7 +2,7 @@
 
 SOURCE_URI=github.com/codepraxis-io/katana
 #SOURCE_TAG=v1.0.1
-SOURCE_TAG=v1.0.3
+SOURCE_TAG=v1.0.6
 ARTIFACT_FILE=katana-linux-amd64
 INTOTO_ATTESTATION=katana-linux-amd64.intoto.jsonl
 
