@@ -1,7 +1,8 @@
 #!/bin/bash
 
 COSIGN_PUBLIC_KEY=$HOME/.cosign/cosign.pub
-IMAGE=ghcr.io/codepraxis-io/spring-music:4.0.0-distroless-java17-debian11
+#IMAGE=ghcr.io/codepraxis-io/spring-music:4.0.0-distroless-java17-debian11
+IMAGE=ghcr.io/codepraxis-io/spring-music:6.0.0-temurin-17-jre-jammy
 
 #cosign verify-attestation --key $COSIGN_PUBLIC_KEY "$IMAGE" | jq -r .payload | base64 --decode | jq .
 TMPDIR=./tmp
@@ -13,6 +14,6 @@ cosign verify-attestation --key $COSIGN_PUBLIC_KEY "$IMAGE" | jq --slurp 'map(.p
 
 cat $ATTESTATION_PAYLOAD | jq -r '.[0]' > $SCANNER_PAYLOAD
 
-echo Vulnerabilities:
+echo Vulnerabilities
 cat $SCANNER_PAYLOAD |jq -r '.'
 #cat $SCANNER_PAYLOAD |jq -r '.Vulnerabilities[] | .VulnerabilityID,.Severity'

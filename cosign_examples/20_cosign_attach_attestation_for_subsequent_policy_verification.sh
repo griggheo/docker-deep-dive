@@ -7,6 +7,6 @@ PRIVATE_KEY_PASS=$(cat ~/.k)
 
 crane digest $IMAGE
 
-echo "test1" > $PREDICATE_FILE
+echo "test20230927" > $PREDICATE_FILE
 
 echo -n $PRIVATE_KEY_PASS | cosign attest --predicate $PREDICATE_FILE --key $COSIGN_PRIVATE_KEY "$IMAGE"

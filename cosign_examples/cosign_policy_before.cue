@@ -8,7 +8,7 @@ predicateType: "cosign.sigstore.dev/attestation/v1"
 // The predicate must match the following constraints.
 predicate: {
     Timestamp: <=before
-    Data: "test1\n"
+    Data: "test20230927\n"
 }
 
 // This will fail because of the Timestamp condition
