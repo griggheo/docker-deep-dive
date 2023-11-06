@@ -20,6 +20,8 @@ Articles:
 * https://containers.gitbook.io/build-containers-the-hard-way/
 * http://jpetazzo.github.io/2017/02/24/from-dotcloud-to-docker/
 * https://iximiuz.com/en/posts/docker-debug-slim-containers/
+* https://www.nginx.com/blog/what-are-namespaces-cgroups-how-do-they-work/
+* https://martinheinz.dev/blog/44
 
 * DockerHub OCI Artifact support: https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/
 
